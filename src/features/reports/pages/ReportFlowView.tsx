@@ -1,0 +1,583 @@
+import React, { useState } from 'react';
+import { ItemType, PersonItem } from '../../persons/types/person';
+import { ReporterRole } from '../types/reporter';
+import { AdminReportItem } from '../../admin/types/admin';
+
+interface ReportFlowViewProps {
+  onAddPersonItem: (newItem: PersonItem, newAdminItem: AdminReportItem) => void;
+  onNavigateHome: () => void;
+  onNavigateSearch: () => void;
+}
+
+export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
+  onAddPersonItem,
+  onNavigateHome,
+  onNavigateSearch,
+}) => {
+  const [step, setStep] = useState<number>(1);
+
+  // Form State
+  const [itemType, setItemType] = useState<ItemType>('desaparecido');
+  const [reporterRole, setReporterRole] = useState<ReporterRole>('familiar');
+  const [reporterName, setReporterName] = useState('');
+  const [reporterDoc, setReporterDoc] = useState('');
+  const [reporterPhone, setReporterPhone] = useState('');
+  const [reporterRel, setReporterRelationship] = useState('Madre');
+
+  const [subjectName, setSubjectName] = useState('');
+  const [subjectAge, setSubjectAge] = useState('');
+  const [subjectGender, setSubjectGender] = useState('Masculino');
+  const [subjectZone, setSubjectZone] = useState('');
+  const [subjectDate, setSubjectDate] = useState('');
+  const [subjectObs, setSubjectObservations] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string>(
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuARiLkW-jqQN830Kvg0mJt_orIstPc4y7szhoXINcAOZPHpR5BggPHa5dz1864uvroq50CrjeLfJvnN8qxWu9l_S61ZT0wjjKu6vp-x0KdTFhvS7bQrhmPJ-3u-o8_QvGMoDk-I5z8BmeQRmu4gWiOYBsSJxNg1eWvxTGXv9yGNyFt8hU0W00IS5wiu9B6NRu_N_ovnHhB4khvpaMvwNuXaF56JuHSvao_e_TlQbVYj0XnqpH4cMM3Jiw'
+  );
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setPhotoPreview(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFinalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const newCode = `#COL-2024-${Math.floor(100 + Math.random() * 900)}`;
+    const newId = `col-2024-${Date.now()}`;
+
+    const newPerson: PersonItem = {
+      id: newId,
+      code: newCode,
+      type: itemType,
+      name: subjectName || 'Desconocido',
+      age: subjectAge ? `${subjectAge} años` : 'Edad no especificada',
+      gender: subjectGender,
+      photo: photoPreview,
+      location: subjectZone || 'Centro, Bogotá',
+      city: 'Bogotá',
+      coordinates: [4.6097 + (Math.random() - 0.5) * 0.05, -74.0817 + (Math.random() - 0.5) * 0.05],
+      updatedAt: 'Hace un momento',
+      lastSeenDate: subjectDate || 'Hoy',
+      verified: false,
+      additionalDetails: subjectObs,
+      clothing: 'Ropa no detallada',
+    };
+
+    const newAdminReport: AdminReportItem = {
+      id: `rep-2024-${Math.floor(1000 + Math.random() * 9000)}`,
+      code: `REP-2024-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: itemType,
+      status: 'pending',
+      reportDate: 'Hoy - Reciente',
+      reporterName: reporterName || 'Anónimo',
+      reporterRole: reporterRole,
+      reporterPhone: reporterPhone || '+57 300 000 0000',
+      reporterEmail: 'usuario@comunidad.org',
+      reporterDocumentType: 'Cédula de Ciudadanía',
+      reporterDocumentId: reporterDoc || '10102030',
+      reporterRelationship: reporterRel,
+      personName: subjectName || 'Desconocido',
+      personAge: subjectAge ? `${subjectAge} años` : 'No especificada',
+      personLocation: subjectZone || 'Bogotá',
+      personCity: 'Bogotá',
+      personPhoto: photoPreview,
+      notes: subjectObs || 'Sin observaciones adicionales.',
+      assignedReviewer: 'Admin_04 (Tú)',
+    };
+
+    onAddPersonItem(newPerson, newAdminReport);
+    setStep(5);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
+      {/* Header bar step navigation */}
+      {step < 5 && (
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-[#e1e3e4]">
+          <button
+            onClick={() => setStep((prev) => Math.max(1, prev - 1))}
+            disabled={step === 1}
+            className="flex items-center gap-1 text-xs font-bold text-[#00685d] disabled:opacity-30 hover:underline cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            Anterior
+          </button>
+
+          <span className="text-xs font-bold text-[#6d7a77] font-mono">
+            Paso {step} de 4
+          </span>
+
+          <button
+            onClick={onNavigateHome}
+            className="text-xs font-bold text-[#6d7a77] hover:text-[#ba1a1a] cursor-pointer"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {/* STEP 1: ¿Qué quieres reportar? */}
+      {step === 1 && (
+        <section className="animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#191c1d] mb-2">
+            ¿Qué quieres reportar?
+          </h2>
+          <p className="text-sm text-[#3d4947] mb-6">
+            Selecciona el tipo de caso para habilitar el formulario adecuado.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => {
+                setItemType('desaparecido');
+                setStep(2);
+              }}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
+                itemType === 'desaparecido'
+                  ? 'border-[#00685d] bg-[#f4fffb] shadow-xs'
+                  : 'border-[#bcc9c6] bg-white hover:border-[#00685d]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2 group-hover:scale-110 transition-transform">
+                person_search
+              </span>
+              <span className="text-sm font-bold text-[#191c1d]">Desaparecido</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setItemType('encontrado');
+                setStep(2);
+              }}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
+                itemType === 'encontrado'
+                  ? 'border-[#00685d] bg-[#f4fffb] shadow-xs'
+                  : 'border-[#bcc9c6] bg-white hover:border-[#00685d]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2 group-hover:scale-110 transition-transform" data-weight="fill">
+                how_to_reg
+              </span>
+              <span className="text-sm font-bold text-[#191c1d]">Encontrado</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setItemType('nn');
+                setStep(2);
+              }}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
+                itemType === 'nn'
+                  ? 'border-[#00685d] bg-[#f4fffb] shadow-xs'
+                  : 'border-[#bcc9c6] bg-white hover:border-[#00685d]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2 group-hover:scale-110 transition-transform">
+                help_center
+              </span>
+              <span className="text-sm font-bold text-[#191c1d]">Persona N.N.</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setItemType('mascota');
+                setStep(2);
+              }}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
+                itemType === 'mascota'
+                  ? 'border-[#00685d] bg-[#f4fffb] shadow-xs'
+                  : 'border-[#bcc9c6] bg-white hover:border-[#00685d]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2 group-hover:scale-110 transition-transform">
+                pets
+              </span>
+              <span className="text-sm font-bold text-[#191c1d]">Mascota</span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* STEP 2: ¿Quién está realizando este reporte? */}
+      {step === 2 && (
+        <section className="animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#191c1d] mb-2">
+            ¿Quién está realizando este reporte?
+          </h2>
+          <p className="text-sm text-[#3d4947] mb-6">
+            Selecciona la opción que mejor describa tu relación con la persona o la situación.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => {
+                setReporterRole('familiar');
+                setStep(3);
+              }}
+              className="p-5 bg-white border border-[#bcc9c6] rounded-2xl flex flex-col items-center text-center hover:border-[#00685d] hover:shadow-md transition-all group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center mb-2 group-hover:bg-[#008376] transition-colors">
+                <span className="material-symbols-outlined text-[#436370] group-hover:text-white text-3xl" data-weight="fill">
+                  family_home
+                </span>
+              </div>
+              <span className="text-base font-bold text-[#191c1d]">Familiar</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setReporterRole('testigo');
+                setStep(3);
+              }}
+              className="p-5 bg-white border border-[#bcc9c6] rounded-2xl flex flex-col items-center text-center hover:border-[#00685d] hover:shadow-md transition-all group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center mb-2 group-hover:bg-[#008376] transition-colors">
+                <span className="material-symbols-outlined text-[#436370] group-hover:text-white text-3xl" data-weight="fill">
+                  visibility
+                </span>
+              </div>
+              <span className="text-base font-bold text-[#191c1d]">Testigo</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setReporterRole('voluntario');
+                setStep(3);
+              }}
+              className="p-5 bg-white border border-[#bcc9c6] rounded-2xl flex flex-col items-center text-center hover:border-[#00685d] hover:shadow-md transition-all group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center mb-2 group-hover:bg-[#008376] transition-colors">
+                <span className="material-symbols-outlined text-[#436370] group-hover:text-white text-3xl" data-weight="fill">
+                  volunteer_activism
+                </span>
+              </div>
+              <span className="text-base font-bold text-[#191c1d]">Voluntario / Personal de Salud</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setReporterRole('otra_persona');
+                setStep(3);
+              }}
+              className="p-5 bg-white border border-[#bcc9c6] rounded-2xl flex flex-col items-center text-center hover:border-[#00685d] hover:shadow-md transition-all group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center mb-2 group-hover:bg-[#008376] transition-colors">
+                <span className="material-symbols-outlined text-[#436370] group-hover:text-white text-3xl" data-weight="fill">
+                  person
+                </span>
+              </div>
+              <span className="text-base font-bold text-[#191c1d]">Otra persona</span>
+            </button>
+          </div>
+
+          <div className="bg-[#f3f4f5] p-4 rounded-xl flex items-start gap-3">
+            <span className="material-symbols-outlined text-[#436370] shrink-0 mt-0.5">
+              shield
+            </span>
+            <p className="text-xs text-[#3d4947] leading-relaxed">
+              <strong>Privacidad:</strong> Tus datos personales no serán públicos y solo se usarán para verificación administrativa por seguridad de la persona reportada.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* STEP 3: Datos del Reportante */}
+      {step === 3 && (
+        <section className="bg-white p-6 rounded-2xl border border-[#e1e3e4] shadow-xs animate-fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-full bg-[#008376] text-white flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-2xl">family_restroom</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[#191c1d]">Datos del Reportante</h2>
+              <p className="text-xs text-[#3d4947]">Por favor, ingresa tus datos como {reporterRole}.</p>
+            </div>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setStep(4);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                Nombre completo *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Ingrese su nombre completo"
+                value={reporterName}
+                onChange={(e) => setReporterName(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Número de identificación *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="C.C., T.I., o Pasaporte"
+                  value={reporterDoc}
+                  onChange={(e) => setReporterDoc(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Teléfono de contacto *
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-3 text-[#6d7a77] text-[20px]">
+                    call
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Número celular (+57...)"
+                    value={reporterPhone}
+                    onChange={(e) => setReporterPhone(e.target.value)}
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                Relación con la persona reportada
+              </label>
+              <select
+                value={reporterRel}
+                onChange={(e) => setReporterRelationship(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none cursor-pointer"
+              >
+                <option value="Madre">Madre</option>
+                <option value="Padre">Padre</option>
+                <option value="Hijo/a">Hijo/a</option>
+                <option value="Hermano/a">Hermano/a</option>
+                <option value="Pareja">Pareja</option>
+                <option value="Amigo/a">Amigo/a</option>
+                <option value="Personal Médico">Personal Médico / Albergue</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div className="pt-4 border-t border-[#e1e3e4] flex justify-end">
+              <button
+                type="submit"
+                className="h-12 px-8 bg-[#00685d] hover:bg-[#008376] text-white font-bold text-xs rounded-full shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                Siguiente
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      {/* STEP 4: Información Detallada del Reporte */}
+      {step === 4 && (
+        <section className="bg-white p-6 rounded-2xl border border-[#e1e3e4] shadow-xs animate-fade-in">
+          <h2 className="text-2xl font-extrabold text-[#191c1d] mb-1">
+            Detalles del Caso ({itemType.toUpperCase()})
+          </h2>
+          <p className="text-xs text-[#3d4947] mb-6">
+            Proporciona la mayor cantidad de información posible para facilitar la búsqueda.
+          </p>
+
+          <form onSubmit={handleFinalSubmit} className="space-y-6">
+            {/* Fotografía Dropzone */}
+            <div>
+              <label className="block text-xs font-bold text-[#191c1d] mb-2">
+                Fotografía (Opcional pero muy recomendado)
+              </label>
+              <div className="border-2 border-dashed border-[#bcc9c6] rounded-2xl p-6 bg-[#f8f9fa] flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#f3f4f5] transition-colors relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                {photoPreview ? (
+                  <div className="relative w-32 h-32 rounded-xl overflow-hidden mb-2 border border-[#bcc9c6]">
+                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2">
+                    add_a_photo
+                  </span>
+                )}
+                <span className="text-xs font-bold text-[#00685d]">
+                  {photoPreview ? 'Cambiar fotografía' : 'Sube un archivo o toca para seleccionar'}
+                </span>
+                <span className="text-[10px] text-[#6d7a77] mt-1">PNG, JPG hasta 10MB</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Nombre o Descripción *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Juan Pérez o 'Hombre alto con chaqueta azul'"
+                  value={subjectName}
+                  onChange={(e) => setSubjectName(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Zona, Barrio o Albergue *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Centro Histórico, Bogotá"
+                  value={subjectZone}
+                  onChange={(e) => setSubjectZone(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Edad aproximada
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ej. 28"
+                  value={subjectAge}
+                  onChange={(e) => setSubjectAge(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Fecha de avistamiento / suceso
+                </label>
+                <input
+                  type="date"
+                  value={subjectDate}
+                  onChange={(e) => setSubjectDate(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">Sexo</label>
+                <div className="flex gap-4 h-12 items-center">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="Masculino"
+                      checked={subjectGender === 'Masculino'}
+                      onChange={() => setSubjectGender('Masculino')}
+                      className="text-[#00685d]"
+                    />
+                    Masculino
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="Femenino"
+                      checked={subjectGender === 'Femenino'}
+                      onChange={() => setSubjectGender('Femenino')}
+                      className="text-[#00685d]"
+                    />
+                    Femenino
+                  </label>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Observaciones adicionales
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Señas particulares (tatuajes, cicatrices), ropa que vestía, estado de salud..."
+                  value={subjectObs}
+                  onChange={(e) => setSubjectObservations(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="bg-[#f3f4f5] p-4 rounded-xl flex items-start gap-3">
+              <span className="material-symbols-outlined text-[#00685d] shrink-0 mt-0.5">
+                shield_lock
+              </span>
+              <p className="text-xs text-[#3d4947]">
+                <strong>Tu privacidad está protegida.</strong> Solo la información del caso será visible públicamente tras revisión de los moderadores.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full h-14 bg-[#00685d] hover:bg-[#008376] text-white font-extrabold text-sm rounded-full shadow-md flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">send</span>
+              Publicar Reporte
+            </button>
+          </form>
+        </section>
+      )}
+
+      {/* STEP 5: Confirmation */}
+      {step === 5 && (
+        <section className="bg-white rounded-2xl p-8 md:p-12 text-center border border-[#e1e3e4] shadow-sm animate-fade-in">
+          <div className="w-20 h-20 bg-[#f4fffb] text-[#00685d] rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-symbols-outlined text-[56px]" data-weight="fill">
+              check_circle
+            </span>
+          </div>
+
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#191c1d] mb-3">
+            Reporte recibido
+          </h2>
+          <p className="text-sm text-[#3d4947] max-w-md mx-auto mb-8 leading-relaxed">
+            Tu reporte será revisado por el equipo antes de aparecer públicamente para garantizar la seguridad de la información. Gracias por ayudar a la comunidad.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
+            <button
+              onClick={onNavigateHome}
+              className="h-12 px-6 bg-[#00685d] text-white font-bold text-xs rounded-full hover:bg-[#008376] transition-colors shadow-xs cursor-pointer"
+            >
+              Volver al inicio
+            </button>
+            <button
+              onClick={onNavigateSearch}
+              className="h-12 px-6 bg-white border border-[#bcc9c6] text-[#436370] font-bold text-xs rounded-full hover:bg-[#f3f4f5] transition-colors cursor-pointer"
+            >
+              Ver todos los casos
+            </button>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+};

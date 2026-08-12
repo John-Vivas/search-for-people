@@ -1,0 +1,6 @@
+{
+  "name": "Estamos Buscando",
+  "description": "Plataforma comunitaria de búsqueda de personas desaparecidas, encontradas, NN y mascotas",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,50 @@
+import { AdminReportItem } from '../../features/reports/types/report';
+
+export const INITIAL_ADMIN_REPORTS: AdminReportItem[] = [
+  {
+    id: 'rep-2024-0892',
+    code: 'REP-2024-0892',
+    type: 'desaparecido',
+    status: 'pending',
+    reportDate: 'Oct 24, 2024 - 14:30 EST',
+    reporterName: 'María González Pérez',
+    reporterRole: 'Familiar (Madre)',
+    reporterPhone: '+57 300 123 4567',
+    reporterEmail: 'm.gonzalez@ejemplo.com',
+    reporterDocumentType: 'Cédula de Ciudadanía',
+    reporterDocumentId: 'USR-99482-COL',
+    reporterRelationship: 'Madre',
+    reporterId: 'usr-99482',
+    reporterType: 'FAMILY',
+    personName: 'Carlos Mendoza',
+    personAge: '28 años',
+    personLocation: 'Chapinero, Bogotá',
+    personCity: 'Bogotá',
+    personPhoto: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARiLkW-jqQN830Kvg0mJt_orIstPc4y7szhoXINcAOZPHpR5BggPHa5dz1864uvroq50CrjeLfJvnN8qxWu9l_S61ZT0wjjKu6vp-x0KdTFhvS7bQrhmPJ-3u-o8_QvGMoDk-I5z8BmeQRmu4gWiOYBsSJxNg1eWvxTGXv9yGNyFt8hU0W00IS5wiu9B6NRu_N_ovnHhB4khvpaMvwNuXaF56JuHSvao_e_TlQbVYj0XnqpH4cMM3Jiw',
+    notes: 'Visto por última vez en la zona de Chapinero, vestía chaqueta azul. Documento adjunto verificado.',
+    assignedReviewer: 'Admin_04 (Tú)'
+  },
+  {
+    id: 'rep-2024-0893',
+    code: 'REP-2024-0893',
+    type: 'nn',
+    status: 'pending',
+    reportDate: 'Oct 24, 2024 - 11:15 EST',
+    reporterName: 'Personal Médico Hospital Centro',
+    reporterRole: 'Voluntario / Médico',
+    reporterPhone: '+57 601 555 1234',
+    reporterEmail: 'atencion@hospitalcentro.gov.co',
+    reporterDocumentType: 'Carnet Institucional',
+    reporterDocumentId: 'MED-7712',
+    reporterRelationship: 'Médico tratante',
+    reporterId: 'med-7712',
+    reporterType: 'VOLUNTEER',
+    personName: 'Desconocido (Jane Doe)',
+    personAge: 'Aprox 30 años',
+    personLocation: 'Hospital Centro',
+    personCity: 'Bogotá',
+    personPhoto: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD77JBV8BmiLb-9xprTC54PzsN1kpZeLLt9r3PHhrkqbOQ8rM_Ub01Ztix7XvjxSzGx9AhlQBJuXEIhPusLnBLqDnCNth--n_fUuWFOGHiVELKtjG4kNEc74hf5rttK_IGcydnu6-Kk5cC3K5Y5lEx9Fru5r1obDcp2WdcJzGPX6hYkHaQUJHC8EjMnXoasJT9Joar1s1G-K9dGvLPUpfXK-ksG4VAJGFKbs6P0tXUF07ivQFxCVvYnCA',
+    notes: 'Ingreso femenino aprox 30 años, sin identificación. Estado estable. Se requiere cruzar con reportes de personas desaparecidas.',
+    assignedReviewer: 'Admin_04 (Tú)'
+  }
+];
