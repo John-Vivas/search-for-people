@@ -715,16 +715,19 @@ http://localhost:3000
 
 ## Configuración local
 
-1. Copia `.env.example` a `.env.local`.
-2. Completa las variables públicas de tu proyecto Supabase:
+1. Configura `.env` con las variables públicas de tu proyecto Supabase:
 
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu_anon_key
 ```
 
-3. Ejecuta el esquema SQL desde `src/db/codeTable.sql` en tu proyecto Supabase (si aún no está aplicado).
-4. Inicia la app con `npm run dev`.
+2. Ejecuta el esquema SQL desde `src/db/codeTable.sql` en tu proyecto Supabase (si aún no está aplicado).
+3. **Fase 4 — Zonas jerárquicas:** ejecuta `supabase/apply_phase4_manual.sql` en el SQL Editor de Supabase (Colombia → Chocó → Quibdó, etc.).
+4. **Fase 5 — Personas de ejemplo:** ejecuta `supabase/migrations/20250812130000_seed_persons.sql` (datos ficticios + policies de lectura).
+5. **Fase 6 — Mascotas de ejemplo:** ejecuta `supabase/migrations/20250812140000_seed_pets.sql`.
+6. **Fase 7 — Reportes (RLS + RPC):** ejecuta `supabase/migrations/20250812150000_reports_rls_and_rpc.sql`.
+7. Inicia la app con `npm run dev`.
 
 > **Importante:** Nunca uses `SUPABASE_SERVICE_ROLE_KEY` en el frontend. La seguridad real depende de **RLS** en PostgreSQL.
 
@@ -788,16 +791,17 @@ Los tipos de UI existentes (`PersonItem`, etc.) se mantienen para no romper comp
 
 ## Estado de integración
 
-- [x] **Fase 1** — Cliente, tipos, servicios, `.env.example`
-- [ ] **Fase 2** — Conectar zonas, ubicaciones, centros al mapa
-- [ ] **Fase 3** — Conectar personas + TanStack Query hooks
-- [ ] **Fase 4** — Mascotas
-- [ ] **Fase 5** — Reportes
-- [ ] **Fase 6** — Eventos de persona
-- [ ] **Fase 7** — Storage / media
-- [ ] **Fase 8** — Auth
-- [ ] **Fase 9** — Admin
-- [ ] **Fase 10** — Realtime
+- [x] **Fase 1** — Cliente, tipos, servicios, variables de entorno
+- [x] **Fase 2** — Configuración `.env` + cliente Supabase normalizado
+- [x] **Fase 4** — Zonas jerárquicas (migración SQL + `zones.service.ts` + mapa)
+- [x] **Fase 5** — Personas conectadas a Supabase (`personService` + mapper + hooks)
+- [x] **Fase 6** — Mascotas conectadas a Supabase (`petService` + mapper + catálogo unificado)
+- [x] **Fase 7** — Reportes (`reportService` + admin RPC + flujo de envío)
+- [ ] **Fase 8** — Auth / perfiles
+- [ ] **Fase 9** — Storage / media
+- [ ] **Fase 10** — Auth
+- [ ] **Fase 11** — Admin
+- [ ] **Fase 12** — Realtime
 
 ---
 

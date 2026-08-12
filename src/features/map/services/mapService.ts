@@ -5,65 +5,157 @@ import {
   PersonMapStatus,
   MapLocationType,
 } from '../types/map.types';
-import { EMERGENCY_ZONES } from '../../../data/mock/emergencyZones';
+import { EMERGENCY_ZONE_TREE } from '../../../data/mock/emergencyZones';
 import { MOCK_MAP_LOCATIONS } from '../../../data/mock/mapLocations.mock';
-import { SupabaseResponse } from '../../../services/api/supabase';
+import { isMockMode } from '../../../lib/dataSource';
+import { mockApiCall, ok, fail, ServiceResponse } from '../../../services/api/errors';
+import { zonesService } from './zones.service';
+import { locationMatchesZoneFilter } from '../utils/zoneTree';
+import { resolveZoneId as mapLegacyZoneId } from '../utils/zoneMappers';
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 
+async function loadZones(): Promise<ServiceResponse<EmergencyZone[]>> {
+  if (isMockMode()) {
+    await delay();
+    return ok(EMERGENCY_ZONE_TREE);
+  }
+
+  const res = await zonesService.getEmergencyZoneTree();
+  if (res.error || !res.data) {
+    return fail(res.error, 'No se pudieron cargar las zonas del mapa');
+  }
+  return ok(res.data);
+}
+
+async function loadLocations(zones: EmergencyZone[]): Promise<MapLocation[]> {
+  if (isMockMode()) {
+    await delay();
+    return MOCK_MAP_LOCATIONS;
+  }
+
+  // Locations desde Supabase — Fase 10; mientras tanto vacío
+  return [];
+}
+
+/** Remapea zoneId legacy (slug) a UUID cuando hay datos en Supabase */
+function remapLocationsToZoneIds(
+  locations: MapLocation[],
+  codeToId: Map<string, string>
+): MapLocation[] {
+  if (codeToId.size === 0) return locations;
+
+  return locations.map((loc) => ({
+    ...loc,
+    zoneId: mapLegacyZoneId(loc.zoneId, codeToId),
+  }));
+}
+
 export const mapService = {
-  async getEmergencyZones(): Promise<SupabaseResponse<EmergencyZone[]>> {
-    await delay();
-    return { data: EMERGENCY_ZONES, error: null };
+  async getEmergencyZones(): Promise<ServiceResponse<EmergencyZone[]>> {
+    return loadZones();
   },
 
-  async getMapLocations(): Promise<SupabaseResponse<MapLocation[]>> {
-    await delay();
-    return { data: MOCK_MAP_LOCATIONS, error: null };
+  async getMapLocations(): Promise<ServiceResponse<MapLocation[]>> {
+    const zonesRes = await loadZones();
+    if (zonesRes.error || !zonesRes.data) {
+      return fail(zonesRes.error, 'No se pudieron cargar ubicaciones del mapa');
+    }
+    const locations = await loadLocations(zonesRes.data);
+    return ok(locations);
   },
 
-  async getLocationsByZone(zoneId: string): Promise<SupabaseResponse<MapLocation[]>> {
-    await delay();
-    const data = MOCK_MAP_LOCATIONS.filter((l) => l.zoneId === zoneId);
-    return { data, error: null };
+  async getLocationsByZone(zoneId: string): Promise<ServiceResponse<MapLocation[]>> {
+    const zonesRes = await loadZones();
+    if (zonesRes.error || !zonesRes.data) {
+      return fail(zonesRes.error, 'No se pudieron cargar ubicaciones');
+    }
+
+    let locations = await loadLocations(zonesRes.data);
+    if (!isMockMode()) {
+      const codeMapRes = await zonesService.getZoneCodeMap();
+      if (codeMapRes.data) {
+        locations = remapLocationsToZoneIds(locations, codeMapRes.data);
+        zoneId = mapLegacyZoneId(zoneId, codeMapRes.data);
+      }
+    }
+
+    const data = locations.filter((l) =>
+      locationMatchesZoneFilter(l, zoneId, 'ALL', zonesRes.data!)
+    );
+    return ok(data);
+  },
+
+  async getLocationsByDepartment(
+    departmentId: string
+  ): Promise<ServiceResponse<MapLocation[]>> {
+    const zonesRes = await loadZones();
+    if (zonesRes.error || !zonesRes.data) {
+      return fail(zonesRes.error, 'No se pudieron cargar ubicaciones');
+    }
+
+    let locations = await loadLocations(zonesRes.data);
+    if (!isMockMode()) {
+      const codeMapRes = await zonesService.getZoneCodeMap();
+      if (codeMapRes.data) {
+        locations = remapLocationsToZoneIds(locations, codeMapRes.data);
+        departmentId = mapLegacyZoneId(departmentId, codeMapRes.data);
+      }
+    }
+
+    const data = locations.filter((l) =>
+      locationMatchesZoneFilter(l, 'ALL', departmentId, zonesRes.data!)
+    );
+    return ok(data);
   },
 
   async getLocationsByStatus(
     status: PersonMapStatus
-  ): Promise<SupabaseResponse<MapLocation[]>> {
-    await delay();
-    const data = MOCK_MAP_LOCATIONS.filter(
-      (l) => l.type === 'PERSON' && l.status === status
-    );
-    return { data, error: null };
+  ): Promise<ServiceResponse<MapLocation[]>> {
+    const res = await this.getMapLocations();
+    if (res.error || !res.data) return res;
+    const data = res.data.filter((l) => l.type === 'PERSON' && l.status === status);
+    return ok(data);
   },
 
   async getLocationsByType(
     type: MapLocationType
-  ): Promise<SupabaseResponse<MapLocation[]>> {
-    await delay();
-    const data = MOCK_MAP_LOCATIONS.filter((l) => l.type === type);
-    return { data, error: null };
+  ): Promise<ServiceResponse<MapLocation[]>> {
+    const res = await this.getMapLocations();
+    if (res.error || !res.data) return res;
+    const data = res.data.filter((l) => l.type === type);
+    return ok(data);
   },
 
-  /** Carga completa para la vista del mapa */
   async getMapData(): Promise<
-    SupabaseResponse<{ zones: EmergencyZone[]; locations: MapLocation[] }>
+    ServiceResponse<{ zones: EmergencyZone[]; locations: MapLocation[] }>
   > {
-    await delay();
-    return {
-      data: { zones: EMERGENCY_ZONES, locations: MOCK_MAP_LOCATIONS },
-      error: null,
-    };
+    const zonesRes = await loadZones();
+    if (zonesRes.error || !zonesRes.data) {
+      return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+    }
+
+    const locations = await loadLocations(zonesRes.data);
+    return ok({ zones: zonesRes.data, locations });
   },
 };
 
 export function filterMapLocations(
   locations: MapLocation[],
-  filters: MapFilter
+  filters: MapFilter,
+  zones: EmergencyZone[] = EMERGENCY_ZONE_TREE
 ): MapLocation[] {
   return locations.filter((loc) => {
-    if (filters.zoneId !== 'ALL' && loc.zoneId !== filters.zoneId) return false;
+    if (
+      !locationMatchesZoneFilter(
+        loc,
+        filters.zoneId,
+        filters.departmentId,
+        zones
+      )
+    ) {
+      return false;
+    }
 
     if (filters.type !== 'ALL' && loc.type !== filters.type) return false;
 

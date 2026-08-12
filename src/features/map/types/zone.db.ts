@@ -12,7 +12,18 @@ export type Facility = import('../../../types/database').FacilityRow;
 
 export type EmergencyZonePublic = Pick<
   EmergencyZone,
-  'id' | 'name' | 'city' | 'department' | 'latitude' | 'longitude' | 'is_active'
+  | 'id'
+  | 'name'
+  | 'type'
+  | 'parent_id'
+  | 'code'
+  | 'city'
+  | 'department'
+  | 'country_code'
+  | 'latitude'
+  | 'longitude'
+  | 'description'
+  | 'is_active'
 >;
 
 export type LocationPublic = Pick<

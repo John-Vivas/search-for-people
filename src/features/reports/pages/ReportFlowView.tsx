@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { ItemType, PersonItem } from '../../persons/types/person';
+import { ItemType } from '../../persons/types/person';
 import { ReporterRole } from '../types/reporter';
-import { AdminReportItem } from '../../admin/types/admin';
+import { useReports } from '../hooks/useReports';
+import { reportService, type ReportSubmissionResult } from '../services/reportService';
 
 interface ReportFlowViewProps {
-  onAddPersonItem: (newItem: PersonItem, newAdminItem: AdminReportItem) => void;
+  onReportSubmitted: (result: ReportSubmissionResult) => void;
   onNavigateHome: () => void;
   onNavigateSearch: () => void;
 }
 
 export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
-  onAddPersonItem,
+  onReportSubmitted,
   onNavigateHome,
   onNavigateSearch,
 }) => {
+  const { submitting, submitError, submitReport } = useReports();
   const [step, setStep] = useState<number>(1);
 
   // Form State
@@ -47,54 +49,32 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
     }
   };
 
-  const handleFinalSubmit = (e: React.FormEvent) => {
+  const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newCode = `#COL-2024-${Math.floor(100 + Math.random() * 900)}`;
-    const newId = `col-2024-${Date.now()}`;
+    try {
+      const form = reportService.buildReportFormFromFlow({
+        itemType,
+        reporterRole,
+        reporterName,
+        reporterDoc,
+        reporterPhone,
+        reporterRel,
+        subjectName,
+        subjectAge,
+        subjectGender,
+        subjectZone,
+        subjectDate,
+        subjectObs,
+        photoPreview,
+      });
 
-    const newPerson: PersonItem = {
-      id: newId,
-      code: newCode,
-      type: itemType,
-      name: subjectName || 'Desconocido',
-      age: subjectAge ? `${subjectAge} años` : 'Edad no especificada',
-      gender: subjectGender,
-      photo: photoPreview,
-      location: subjectZone || 'Centro, Bogotá',
-      city: 'Bogotá',
-      coordinates: [4.6097 + (Math.random() - 0.5) * 0.05, -74.0817 + (Math.random() - 0.5) * 0.05],
-      updatedAt: 'Hace un momento',
-      lastSeenDate: subjectDate || 'Hoy',
-      verified: false,
-      additionalDetails: subjectObs,
-      clothing: 'Ropa no detallada',
-    };
-
-    const newAdminReport: AdminReportItem = {
-      id: `rep-2024-${Math.floor(1000 + Math.random() * 9000)}`,
-      code: `REP-2024-${Math.floor(1000 + Math.random() * 9000)}`,
-      type: itemType,
-      status: 'pending',
-      reportDate: 'Hoy - Reciente',
-      reporterName: reporterName || 'Anónimo',
-      reporterRole: reporterRole,
-      reporterPhone: reporterPhone || '+57 300 000 0000',
-      reporterEmail: 'usuario@comunidad.org',
-      reporterDocumentType: 'Cédula de Ciudadanía',
-      reporterDocumentId: reporterDoc || '10102030',
-      reporterRelationship: reporterRel,
-      personName: subjectName || 'Desconocido',
-      personAge: subjectAge ? `${subjectAge} años` : 'No especificada',
-      personLocation: subjectZone || 'Bogotá',
-      personCity: 'Bogotá',
-      personPhoto: photoPreview,
-      notes: subjectObs || 'Sin observaciones adicionales.',
-      assignedReviewer: 'Admin_04 (Tú)',
-    };
-
-    onAddPersonItem(newPerson, newAdminReport);
-    setStep(5);
+      const result = await submitReport(form);
+      onReportSubmitted(result);
+      setStep(5);
+    } catch {
+      // submitError set in hook
+    }
   };
 
   return (
@@ -535,12 +515,21 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
               </p>
             </div>
 
+            {submitError && (
+              <div className="bg-[#ffdad6] text-[#93000a] p-3 rounded-xl text-xs font-semibold">
+                {submitError}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full h-14 bg-[#00685d] hover:bg-[#008376] text-white font-extrabold text-sm rounded-full shadow-md flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+              disabled={submitting}
+              className="w-full h-14 bg-[#00685d] hover:bg-[#008376] disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-sm rounded-full shadow-md flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[20px]">send</span>
-              Publicar Reporte
+              <span className="material-symbols-outlined text-[20px]">
+                {submitting ? 'hourglass_empty' : 'send'}
+              </span>
+              {submitting ? 'Enviando reporte...' : 'Publicar Reporte'}
             </button>
           </form>
         </section>

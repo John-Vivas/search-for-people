@@ -1,15 +1,104 @@
 import { PersonItem } from '../../persons/types/person';
-import { personService } from '../../persons/services/personService';
-import { SupabaseResponse } from '../../../services/api/supabase';
+import { INITIAL_ITEMS } from '../../../data/mock/mockPersons';
+import { isMockMode } from '../../../lib/dataSource';
+import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
+import { loadEnrichmentContext } from '../../../lib/enrichmentContext';
+import { petsService } from './pets.service';
+import { zonesService } from '../../map/services/zones.service';
+import {
+  mapPetToItem,
+  mapPetsToItems,
+  type PetMappableRow,
+} from '../mappers/pet.mapper';
+import {
+  resolveZoneIdByCityName,
+  zonePublicToInfo,
+} from '../../persons/mappers/person.mapper';
+
+function getMockPets(): PersonItem[] {
+  const saved = localStorage.getItem('estamos_buscando_items');
+  const items: PersonItem[] = saved ? JSON.parse(saved) : INITIAL_ITEMS;
+  return items.filter((i) => i.type === 'mascota');
+}
+
+async function mapRecordsToItems(rows: PetMappableRow[]): Promise<PersonItem[]> {
+  const ctx = await loadEnrichmentContext();
+  return mapPetsToItems(rows, ctx);
+}
+
+async function mapRecordToItem(row: PetMappableRow): Promise<PersonItem> {
+  const ctx = await loadEnrichmentContext();
+  return mapPetToItem(row, ctx);
+}
 
 export const petService = {
-  /**
-   * Fetch pet items.
-   * Prepared for Supabase query: `supabase.from('persons').select('*').eq('type', 'mascota')`
-   */
-  async getPets(): Promise<SupabaseResponse<PersonItem[]>> {
-    const response = await personService.getPersons();
-    const pets = response.data?.filter((i) => i.type === 'mascota') || [];
-    return { data: pets, error: null };
-  }
+  async getPets(): Promise<ServiceResponse<PersonItem[]>> {
+    if (isMockMode()) {
+      return mockApiCall(getMockPets());
+    }
+
+    const res = await petsService.searchPets({ limit: 100 });
+    if (res.error || !res.data) {
+      return fail(res.error, 'No se pudieron cargar las mascotas');
+    }
+
+    return ok(await mapRecordsToItems(res.data));
+  },
+
+  async getPetById(id: string): Promise<ServiceResponse<PersonItem | null>> {
+    if (isMockMode()) {
+      const pet = getMockPets().find((p) => p.id === id) ?? null;
+      return mockApiCall(pet);
+    }
+
+    const res = await petsService.getPetById(id);
+    if (res.error) return fail(res.error, 'No se pudo cargar la mascota');
+    if (!res.data) return ok(null);
+    return ok(await mapRecordToItem(res.data));
+  },
+
+  async searchPets(
+    query?: string,
+    zone?: string,
+    statusFilter?: string
+  ): Promise<ServiceResponse<PersonItem[]>> {
+    if (isMockMode()) {
+      let pets = getMockPets();
+
+      if (zone && zone !== 'todas') {
+        pets = pets.filter((p) => p.city === zone);
+      }
+
+      if (query?.trim()) {
+        const q = query.toLowerCase();
+        pets = pets.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.location.toLowerCase().includes(q) ||
+            p.code.toLowerCase().includes(q) ||
+            p.city.toLowerCase().includes(q) ||
+            (p.additionalDetails || '').toLowerCase().includes(q)
+        );
+      }
+
+      return mockApiCall(pets);
+    }
+
+    const zonesRes = await zonesService.getEmergencyZones(true);
+    const zones = (zonesRes.data ?? []).map(zonePublicToInfo);
+
+    const filters: Parameters<typeof petsService.searchPets>[0] = { limit: 100 };
+    if (query?.trim()) filters.query = query.trim();
+    if (zone && zone !== 'todas') {
+      const zoneId = resolveZoneIdByCityName(zone, zones);
+      if (zoneId) filters.zoneId = zoneId;
+    }
+
+    const res = await petsService.searchPets(filters);
+    if (res.error || !res.data) {
+      return fail(res.error, 'No se pudieron buscar mascotas');
+    }
+
+    return ok(await mapRecordsToItems(res.data));
+  },
 };

@@ -1,6 +1,10 @@
 import { getSupabaseClient } from '../../../lib/supabase';
 import { isMockMode } from '../../../lib/dataSource';
-import { PERSON_PUBLIC_COLUMNS, DEFAULT_PAGE_SIZE } from '../../../lib/constants';
+import {
+  PERSON_PUBLIC_COLUMNS,
+  PERSON_DETAIL_COLUMNS,
+  DEFAULT_PAGE_SIZE,
+} from '../../../lib/constants';
 import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
 import type {
   PersonPublic,
@@ -10,17 +14,25 @@ import type {
   PersonUpdate,
 } from '../types/person.db';
 
+/** Person row with optional detail fields for UI mapping */
+export type PersonRecord = PersonPublic & {
+  description?: string | null;
+  physical_description?: string | null;
+  clothing_description?: string | null;
+  distinguishing_features?: string | null;
+};
+
 export const personsService = {
   async getPersons(
     filters: PersonSearchFilters = {}
-  ): Promise<ServiceResponse<PersonPublic[]>> {
+  ): Promise<ServiceResponse<PersonRecord[]>> {
     if (isMockMode()) {
       return mockApiCall([]);
     }
     return this.searchPersons(filters);
   },
 
-  async getPersonById(id: string): Promise<ServiceResponse<PersonPublic | null>> {
+  async getPersonById(id: string): Promise<ServiceResponse<PersonRecord | null>> {
     if (isMockMode()) {
       return mockApiCall(null);
     }
@@ -29,12 +41,12 @@ export const personsService = {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('persons')
-        .select(PERSON_PUBLIC_COLUMNS)
+        .select(PERSON_DETAIL_COLUMNS)
         .eq('id', id)
         .maybeSingle();
 
       if (error) return fail(error, 'No se pudo cargar la persona');
-      return ok(data as PersonPublic | null);
+      return ok(data as PersonRecord | null);
     } catch (error) {
       return fail(error, 'No se pudo cargar la persona');
     }
@@ -42,25 +54,28 @@ export const personsService = {
 
   async getMissingPersons(
     filters: Omit<PersonSearchFilters, 'status'> = {}
-  ): Promise<ServiceResponse<PersonPublic[]>> {
+  ): Promise<ServiceResponse<PersonRecord[]>> {
     return this.searchPersons({ ...filters, status: 'MISSING' });
   },
 
   async getFoundPersons(
     filters: Omit<PersonSearchFilters, 'status'> = {}
-  ): Promise<ServiceResponse<PersonPublic[]>> {
-    return this.searchPersons({ ...filters, status: 'FOUND' });
+  ): Promise<ServiceResponse<PersonRecord[]>> {
+    return this.searchPersons({
+      ...filters,
+      status: ['FOUND', 'IDENTIFIED', 'TRANSFERRED', 'REUNITED'],
+    });
   },
 
   async getUnidentifiedPersons(
     filters: Omit<PersonSearchFilters, 'status'> = {}
-  ): Promise<ServiceResponse<PersonPublic[]>> {
+  ): Promise<ServiceResponse<PersonRecord[]>> {
     return this.searchPersons({ ...filters, status: 'UNIDENTIFIED' });
   },
 
   async searchPersons(
     filters: PersonSearchFilters = {}
-  ): Promise<ServiceResponse<PersonPublic[]>> {
+  ): Promise<ServiceResponse<PersonRecord[]>> {
     const {
       query,
       status,
@@ -80,7 +95,7 @@ export const personsService = {
       const supabase = getSupabaseClient();
       let dbQuery = supabase
         .from('persons')
-        .select(PERSON_PUBLIC_COLUMNS)
+        .select(PERSON_DETAIL_COLUMNS)
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -95,15 +110,15 @@ export const personsService = {
       if (lastSeenBefore) dbQuery = dbQuery.lte('last_seen_at', lastSeenBefore);
 
       if (query?.trim()) {
-        const q = `%${query.trim()}%`;
+        const q = query.trim();
         dbQuery = dbQuery.or(
-          `full_name.ilike.${q},identifier_code.ilike.${q},description.ilike.${q}`
+          `full_name.ilike.%${q}%,identifier_code.ilike.%${q}%,description.ilike.%${q}%,distinguishing_features.ilike.%${q}%`
         );
       }
 
       const { data, error, count } = await dbQuery;
       if (error) return fail(error, 'No se pudieron buscar personas');
-      return ok((data ?? []) as PersonPublic[], count ?? undefined);
+      return ok((data ?? []) as PersonRecord[], count ?? undefined);
     } catch (error) {
       return fail(error, 'No se pudieron buscar personas');
     }

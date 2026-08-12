@@ -1,7 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+/** Strip accidental /rest/v1 suffix — the SDK appends it automatically */
+function normalizeSupabaseUrl(raw: string): string {
+  return raw.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/$/, '');
+}
+
+const supabaseUrl = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL ?? '');
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
 /** True when both public env vars are present */
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);

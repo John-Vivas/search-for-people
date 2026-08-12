@@ -1,68 +1,89 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminReportItem } from '../../reports/types/report';
 import { adminService } from '../services/adminService';
+import { isMockMode } from '../../../lib/dataSource';
 
-export function useAdminReports(initialData?: AdminReportItem[]) {
-  const [adminReports, setAdminReports] = useState<AdminReportItem[]>(initialData || []);
-  const [loading, setLoading] = useState<boolean>(!initialData);
+export function useAdminReports() {
+  const [adminReports, setAdminReports] = useState<AdminReportItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchAdminReports = useCallback(async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await adminService.getAdminReports();
-      if (res.data) {
-        setAdminReports(res.data);
-      }
-    } finally {
-      setLoading(false);
+    setError(null);
+
+    const res = await adminService.getAdminReports();
+    if (res.error) {
+      setError(res.error.message);
+      setAdminReports([]);
+    } else {
+      setAdminReports(res.data ?? []);
     }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!initialData) {
-      fetchAdminReports();
+    fetchReports();
+  }, [fetchReports]);
+
+  useEffect(() => {
+    if (isMockMode() && adminReports.length > 0) {
+      adminService.saveAdminReportsToStorage(adminReports);
     }
-  }, [fetchAdminReports, initialData]);
+  }, [adminReports]);
 
-  const addAdminReport = useCallback((newReport: AdminReportItem) => {
-    setAdminReports((prev) => {
-      const updated = [newReport, ...prev];
-      adminService.saveAdminReportsToStorage(updated);
-      return updated;
-    });
+  const addAdminReport = useCallback((report: AdminReportItem) => {
+    setAdminReports((prev) => [report, ...prev]);
   }, []);
 
-  const approveReport = useCallback((id: string) => {
-    setAdminReports((prev) => {
-      const updated = prev.map((r) => (r.id === id ? { ...r, status: 'approved' as const } : r));
-      adminService.saveAdminReportsToStorage(updated);
-      return updated;
-    });
-  }, []);
+  const approveReport = useCallback(
+    async (id: string, notes?: string) => {
+      const res = await adminService.updateReportStatus(id, 'approved', notes);
+      if (res.error) {
+        setError(res.error.message);
+        return false;
+      }
+      await fetchReports();
+      return true;
+    },
+    [fetchReports]
+  );
 
-  const rejectReport = useCallback((id: string) => {
-    setAdminReports((prev) => {
-      const updated = prev.map((r) => (r.id === id ? { ...r, status: 'rejected' as const } : r));
-      adminService.saveAdminReportsToStorage(updated);
-      return updated;
-    });
-  }, []);
+  const rejectReport = useCallback(
+    async (id: string, notes?: string) => {
+      const res = await adminService.updateReportStatus(id, 'rejected', notes);
+      if (res.error) {
+        setError(res.error.message);
+        return false;
+      }
+      await fetchReports();
+      return true;
+    },
+    [fetchReports]
+  );
 
-  const updateReportStatus = useCallback((id: string, newStatus: 'pending' | 'approved' | 'rejected', notes: string) => {
-    setAdminReports((prev) => {
-      const updated = prev.map((r) => (r.id === id ? { ...r, status: newStatus, notes } : r));
-      adminService.saveAdminReportsToStorage(updated);
-      return updated;
-    });
-  }, []);
+  const updateReportStatus = useCallback(
+    async (id: string, status: AdminReportItem['status'], notes?: string) => {
+      const res = await adminService.updateReportStatus(id, status, notes);
+      if (res.error) {
+        setError(res.error.message);
+        return false;
+      }
+      await fetchReports();
+      return true;
+    },
+    [fetchReports]
+  );
 
   return {
     adminReports,
-    setAdminReports,
     loading,
+    error,
+    refetch: fetchReports,
     addAdminReport,
     approveReport,
     rejectReport,
-    updateReportStatus
+    updateReportStatus,
   };
 }

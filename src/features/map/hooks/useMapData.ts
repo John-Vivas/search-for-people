@@ -12,7 +12,11 @@ export function useMapData() {
     setLoading(true);
     setError(null);
     const res = await mapService.getMapData();
-    if (res.data) {
+    if (res.error) {
+      setError(res.error.message);
+      setZones([]);
+      setLocations([]);
+    } else if (res.data) {
       setZones(res.data.zones);
       setLocations(res.data.locations);
     } else {

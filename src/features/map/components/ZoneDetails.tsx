@@ -25,7 +25,9 @@ export const ZoneDetails: React.FC<ZoneDetailsProps> = ({
         </button>
       )}
       <h3 className="text-lg font-bold text-[#191c1d]">{stats.zoneName}</h3>
-      <p className="text-sm text-[#6d7a77]">{stats.department}</p>
+      <p className="text-sm text-[#6d7a77]">
+        {stats.zoneType === 'DEPARTMENT' ? 'Departamento' : stats.department || 'Zona'}
+      </p>
     </div>
 
     <div className="p-4 grid grid-cols-2 gap-3">
@@ -46,7 +48,29 @@ export const ZoneDetails: React.FC<ZoneDetailsProps> = ({
       </div>
     </div>
 
-    {onViewRecords && (
+    {stats.childStats && stats.childStats.length > 0 && (
+      <div className="px-4 pb-2 border-t border-[#e1e3e4]">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#6d7a77] py-3">
+          Por municipio / ciudad
+        </p>
+        <ul className="space-y-2 pb-2">
+          {stats.childStats.map((child) => (
+            <li
+              key={child.zoneId}
+              className="flex items-center justify-between text-sm py-1.5 border-b border-[#f3f4f5] last:border-0"
+            >
+              <span className="font-medium text-[#191c1d]">{child.zoneName}</span>
+              <span className="text-[#6d7a77] text-xs">
+                {child.missing} desap. · {child.found} enc. · {child.unidentified} NN ·{' '}
+                {child.pets} masc.
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {onViewRecords && stats.zoneType !== 'DEPARTMENT' && (
       <div className="px-4 pb-4">
         <button
           type="button"

@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { PersonItem, AdminReportItem } from './types';
-import { INITIAL_ITEMS, INITIAL_ADMIN_REPORTS } from './data/mockData';
+import React, { useState } from 'react';
+import { PersonItem } from './types';
+import type { AdminReportItem } from './features/reports/types/report';
 import { TopAppBar } from './components/TopAppBar';
 import { BottomNavBar } from './components/BottomNavBar';
 import { SightingModal } from './components/SightingModal';
+import { usePersons } from './features/persons/hooks/usePersons';
+import { useAdminReports } from './features/admin/hooks/useAdminReports';
+import type { ReportSubmissionResult } from './features/reports/services/reportService';
+import {
+  ListErrorState,
+  ListLoadingState,
+} from './components/common/AsyncListState';
 
 import { HomeView } from './views/HomeView';
 import { SearchView } from './views/SearchView';
@@ -17,16 +24,29 @@ import { ReportFlowView } from './views/ReportFlowView';
 import { AdminOverviewView } from './views/AdminOverviewView';
 import { AdminReportDetailView } from './views/AdminReportDetailView';
 
-export function App() {
-  const [items, setItems] = useState<PersonItem[]>(() => {
-    const saved = localStorage.getItem('estamos_buscando_items');
-    return saved ? JSON.parse(saved) : INITIAL_ITEMS;
-  });
+const PERSON_TABS = new Set([
+  'home',
+  'buscar',
+  'encontrados',
+  'desaparecidos',
+  'nn',
+  'detail',
+]);
 
-  const [adminReports, setAdminReports] = useState<AdminReportItem[]>(() => {
-    const saved = localStorage.getItem('estamos_buscando_admin_reports');
-    return saved ? JSON.parse(saved) : INITIAL_ADMIN_REPORTS;
-  });
+const ADMIN_TABS = new Set(['admin', 'admin_detail']);
+
+export function App() {
+  const { items, loading, error, refetch, getPersonById, addPersonItem } = usePersons();
+  const {
+    adminReports,
+    loading: adminLoading,
+    error: adminError,
+    refetch: refetchAdmin,
+    addAdminReport,
+    approveReport,
+    rejectReport,
+    updateReportStatus,
+  } = useAdminReports();
 
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [searchInitialFilter, setSearchInitialFilter] = useState<string>('todos');
@@ -34,17 +54,7 @@ export function App() {
   const [selectedAdminReport, setSelectedAdminReport] = useState<AdminReportItem | null>(null);
   const [isSightingModalOpen, setIsSightingModalOpen] = useState(false);
 
-  // Sync state to localStorage for persistent changes
-  useEffect(() => {
-    localStorage.setItem('estamos_buscando_items', JSON.stringify(items));
-  }, [items]);
-
-  useEffect(() => {
-    localStorage.setItem('estamos_buscando_admin_reports', JSON.stringify(adminReports));
-  }, [adminReports]);
-
-  // Handle navigation
-  const handleNavigate = (tab: string, filter?: string, itemId?: string) => {
+  const handleNavigate = async (tab: string, filter?: string, itemId?: string) => {
     if (filter) {
       setSearchInitialFilter(filter);
     } else {
@@ -55,6 +65,14 @@ export function App() {
       const found = items.find((i) => i.id === itemId);
       if (found) {
         setSelectedPerson(found);
+        setCurrentTab('detail');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const fetched = await getPersonById(itemId);
+      if (fetched) {
+        setSelectedPerson(fetched);
         setCurrentTab('detail');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
@@ -76,36 +94,40 @@ export function App() {
     setIsSightingModalOpen(true);
   };
 
-  const handleAddPersonItem = (newItem: PersonItem, newAdminItem: AdminReportItem) => {
-    setItems((prev) => [newItem, ...prev]);
-    setAdminReports((prev) => [newAdminItem, ...prev]);
+  const handleReportSubmitted = (result: ReportSubmissionResult) => {
+    addAdminReport(result.adminReport);
+    if (result.publishToPublicCatalog && result.publicPreview) {
+      addPersonItem(result.publicPreview);
+    }
   };
 
-  const handleApproveReport = (id: string) => {
-    setAdminReports((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: 'approved' } : r))
-    );
+  const showPersonLoading = loading && PERSON_TABS.has(currentTab);
+  const showPersonError = !loading && error && PERSON_TABS.has(currentTab);
+  const showAdminLoading = adminLoading && ADMIN_TABS.has(currentTab);
+  const showAdminError = !adminLoading && adminError && ADMIN_TABS.has(currentTab);
+
+  const renderPersonContent = (content: React.ReactNode) => {
+    if (showPersonLoading) {
+      return <ListLoadingState message="Cargando personas..." />;
+    }
+    if (showPersonError) {
+      return <ListErrorState message={error} onRetry={refetch} />;
+    }
+    return content;
   };
 
-  const handleRejectReport = (id: string) => {
-    setAdminReports((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: 'rejected' } : r))
-    );
-  };
-
-  const handleUpdateAdminReportStatus = (
-    id: string,
-    newStatus: 'pending' | 'approved' | 'rejected',
-    notes: string
-  ) => {
-    setAdminReports((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus, notes } : r))
-    );
+  const renderAdminContent = (content: React.ReactNode) => {
+    if (showAdminLoading) {
+      return <ListLoadingState message="Cargando reportes..." />;
+    }
+    if (showAdminError) {
+      return <ListErrorState message={adminError} onRetry={refetchAdmin} />;
+    }
+    return content;
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d] flex flex-col font-sans selection:bg-[#008376] selection:text-white">
-      {/* Top Header */}
       <TopAppBar
         currentTab={currentTab}
         onNavigate={handleNavigate}
@@ -116,45 +138,43 @@ export function App() {
         }}
       />
 
-      {/* Main View Router */}
       <main className="flex-1 mt-[64px] md:mt-[72px]">
-        {currentTab === 'home' && (
-          <HomeView
-            items={items}
-            onNavigate={handleNavigate}
-            onSelectPerson={handleSelectPerson}
-          />
-        )}
+        {currentTab === 'home' &&
+          renderPersonContent(
+            <HomeView
+              items={items}
+              onNavigate={handleNavigate}
+              onSelectPerson={handleSelectPerson}
+            />
+          )}
 
-        {currentTab === 'buscar' && (
-          <SearchView
-            items={items}
-            initialFilter={searchInitialFilter}
-            onSelectPerson={handleSelectPerson}
-          />
-        )}
+        {currentTab === 'buscar' &&
+          renderPersonContent(
+            <SearchView
+              items={items}
+              initialFilter={searchInitialFilter}
+              onSelectPerson={handleSelectPerson}
+            />
+          )}
 
-        {currentTab === 'encontrados' && (
-          <EncontradosView
-            items={items}
-            onSelectPerson={handleSelectPerson}
-          />
-        )}
+        {currentTab === 'encontrados' &&
+          renderPersonContent(
+            <EncontradosView items={items} onSelectPerson={handleSelectPerson} />
+          )}
 
-        {currentTab === 'desaparecidos' && (
-          <DesaparecidosView
-            items={items}
-            onSelectPerson={handleSelectPerson}
-            onNavigateReport={() => handleNavigate('reportar')}
-          />
-        )}
+        {currentTab === 'desaparecidos' &&
+          renderPersonContent(
+            <DesaparecidosView
+              items={items}
+              onSelectPerson={handleSelectPerson}
+              onNavigateReport={() => handleNavigate('reportar')}
+            />
+          )}
 
-        {currentTab === 'nn' && (
-          <NNView
-            items={items}
-            onIdentifyPerson={handleIdentifyNN}
-          />
-        )}
+        {currentTab === 'nn' &&
+          renderPersonContent(
+            <NNView items={items} onIdentifyPerson={handleIdentifyNN} />
+          )}
 
         {currentTab === 'mapa' && (
           <MapView
@@ -166,42 +186,58 @@ export function App() {
 
         {currentTab === 'reportar' && (
           <ReportFlowView
-            onAddPersonItem={handleAddPersonItem}
+            onReportSubmitted={handleReportSubmitted}
             onNavigateHome={() => handleNavigate('home')}
             onNavigateSearch={() => handleNavigate('buscar')}
           />
         )}
 
-        {currentTab === 'detail' && selectedPerson && (
-          <PersonDetailView
-            item={selectedPerson}
-            onOpenSightingModal={() => setIsSightingModalOpen(true)}
-            onBack={() => setCurrentTab('buscar')}
-          />
-        )}
+        {currentTab === 'detail' &&
+          renderPersonContent(
+            selectedPerson ? (
+              <PersonDetailView
+                item={selectedPerson}
+                onOpenSightingModal={() => setIsSightingModalOpen(true)}
+                onBack={() => setCurrentTab('buscar')}
+              />
+            ) : (
+              <ListErrorState
+                message="No se encontró la ficha de esta persona."
+                onRetry={() => handleNavigate('buscar')}
+              />
+            )
+          )}
 
-        {currentTab === 'admin' && (
-          <AdminOverviewView
-            adminReports={adminReports}
-            onSelectAdminReport={(report) => {
-              setSelectedAdminReport(report);
-              setCurrentTab('admin_detail');
-            }}
-            onApproveReport={handleApproveReport}
-            onRejectReport={handleRejectReport}
-          />
-        )}
+        {currentTab === 'admin' &&
+          renderAdminContent(
+            <AdminOverviewView
+              adminReports={adminReports}
+              onSelectAdminReport={(report) => {
+                setSelectedAdminReport(report);
+                setCurrentTab('admin_detail');
+              }}
+              onApproveReport={approveReport}
+              onRejectReport={rejectReport}
+            />
+          )}
 
-        {currentTab === 'admin_detail' && selectedAdminReport && (
-          <AdminReportDetailView
-            report={selectedAdminReport}
-            onBack={() => setCurrentTab('admin')}
-            onUpdateStatus={handleUpdateAdminReportStatus}
-          />
-        )}
+        {currentTab === 'admin_detail' &&
+          renderAdminContent(
+            selectedAdminReport ? (
+              <AdminReportDetailView
+                report={selectedAdminReport}
+                onBack={() => setCurrentTab('admin')}
+                onUpdateStatus={updateReportStatus}
+              />
+            ) : (
+              <ListErrorState
+                message="No se encontró el reporte seleccionado."
+                onRetry={() => setCurrentTab('admin')}
+              />
+            )
+          )}
       </main>
 
-      {/* Footer */}
       {currentTab !== 'mapa' && (
         <footer className="bg-white border-t border-[#e1e3e4] py-8 px-4 text-center text-xs text-[#6d7a77] mb-16 md:mb-0">
           <div className="max-w-5xl mx-auto space-y-3">
@@ -224,7 +260,6 @@ export function App() {
         </footer>
       )}
 
-      {/* Sighting / Identification Modal */}
       <SightingModal
         item={selectedPerson}
         isOpen={isSightingModalOpen}
@@ -234,7 +269,6 @@ export function App() {
         }}
       />
 
-      {/* Mobile Bottom Navigation */}
       <BottomNavBar currentTab={currentTab} onNavigate={handleNavigate} />
     </div>
   );

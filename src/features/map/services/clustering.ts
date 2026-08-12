@@ -1,24 +1,34 @@
 import { MapLocation, MapCluster, EmergencyZone } from '../types/map.types';
+import { isMapDisplayZone } from '../../../types/emergency-zone';
 
 const CLUSTER_ZOOM_THRESHOLD = 10;
 
-export function shouldShowClusters(zoom: number, zoneFilter: string): boolean {
-  return zoom < CLUSTER_ZOOM_THRESHOLD && zoneFilter === 'ALL';
+export function shouldShowClusters(
+  zoom: number,
+  zoneFilter: string,
+  departmentFilter: string
+): boolean {
+  return (
+    zoom < CLUSTER_ZOOM_THRESHOLD &&
+    zoneFilter === 'ALL' &&
+    departmentFilter === 'ALL'
+  );
 }
 
 export function buildZoneClusters(
   zones: EmergencyZone[],
-  locations: MapLocation[]
+  locations: MapLocation[],
+  allZones: EmergencyZone[] = zones
 ): MapCluster[] {
   return zones
-    .filter((z) => z.active)
+    .filter(isMapDisplayZone)
     .map((zone) => {
       const items = locations.filter((l) => l.zoneId === zone.id);
       return {
         id: `cluster-${zone.id}`,
         zoneId: zone.id,
-        latitude: zone.latitude,
-        longitude: zone.longitude,
+        latitude: zone.latitude!,
+        longitude: zone.longitude!,
         count: items.length,
         label: zone.name,
         items,
@@ -59,12 +69,14 @@ export function resolveMapDisplay(
   zones: EmergencyZone[],
   locations: MapLocation[],
   zoom: number,
-  zoneFilter: string
+  zoneFilter: string,
+  departmentFilter = 'ALL',
+  allZones: EmergencyZone[] = zones
 ): { mode: 'zones' | 'clusters' | 'individual'; clusters: MapCluster[] } {
-  if (shouldShowClusters(zoom, zoneFilter)) {
+  if (shouldShowClusters(zoom, zoneFilter, departmentFilter)) {
     return {
       mode: 'zones',
-      clusters: buildZoneClusters(zones, locations),
+      clusters: buildZoneClusters(zones, locations, allZones),
     };
   }
 

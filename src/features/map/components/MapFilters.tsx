@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MapFilter, EmergencyZone } from '../types/map.types';
+import { getCitiesForDepartment, getDepartmentZones } from '../utils/zoneTree';
 
 interface MapFiltersProps {
   filters: MapFilter;
@@ -19,6 +20,22 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
 
   const labelClass = 'text-[11px] font-bold uppercase tracking-wide text-[#6d7a77] mb-1 block';
 
+  const departments = useMemo(() => getDepartmentZones(zones), [zones]);
+
+  const cities = useMemo(() => {
+    if (filters.departmentId === 'ALL') {
+      return zones.filter(
+        (z) =>
+          (z.type === 'CITY' ||
+            z.type === 'MUNICIPALITY' ||
+            z.type === 'DISTRICT' ||
+            z.type === 'EMERGENCY_ZONE') &&
+          z.active
+      );
+    }
+    return getCitiesForDepartment(zones, filters.departmentId);
+  }, [zones, filters.departmentId]);
+
   return (
     <div
       className={`bg-white border border-[#e1e3e4] rounded-2xl p-4 space-y-4 ${
@@ -33,8 +50,32 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
       </h2>
 
       <div>
+        <label htmlFor="map-filter-department" className={labelClass}>
+          Departamento
+        </label>
+        <select
+          id="map-filter-department"
+          value={filters.departmentId}
+          onChange={(e) =>
+            onChange({
+              departmentId: e.target.value,
+              zoneId: 'ALL',
+            })
+          }
+          className={selectClass}
+        >
+          <option value="ALL">Todos</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <label htmlFor="map-filter-zone" className={labelClass}>
-          Zona
+          Ciudad / Municipio
         </label>
         <select
           id="map-filter-zone"
@@ -42,8 +83,10 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
           onChange={(e) => onChange({ zoneId: e.target.value })}
           className={selectClass}
         >
-          <option value="ALL">Todas</option>
-          {zones.map((z) => (
+          <option value="ALL">
+            {filters.departmentId === 'ALL' ? 'Todas' : 'Todas en el departamento'}
+          </option>
+          {cities.map((z) => (
             <option key={z.id} value={z.id}>
               {z.name}
             </option>
@@ -61,7 +104,10 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
           onChange={(e) =>
             onChange({
               type: e.target.value as MapFilter['type'],
-              status: e.target.value === 'PET' || e.target.value === 'FACILITY' ? 'ALL' : filters.status,
+              status:
+                e.target.value === 'PET' || e.target.value === 'FACILITY'
+                  ? 'ALL'
+                  : filters.status,
             })
           }
           className={selectClass}

@@ -38,10 +38,15 @@ export interface ProfileRow {
 export interface EmergencyZoneRow {
   id: string;
   name: string;
-  city: string;
-  department: string;
+  type: string | null;
+  parent_id: string | null;
+  code: string | null;
+  city: string | null;
+  department: string | null;
+  country_code: string | null;
   latitude: number | null;
   longitude: number | null;
+  description: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

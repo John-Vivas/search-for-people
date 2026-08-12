@@ -1,23 +1,26 @@
 import { useState, useCallback } from 'react';
-import { ReportForm, AdminReportItem, SightingReport } from '../types/report';
-import { PersonItem } from '../../persons/types/person';
-import { reportService } from '../services/reportService';
+import { ReportForm, SightingReport } from '../types/report';
+import {
+  reportService,
+  type ReportSubmissionResult,
+} from '../services/reportService';
 
 export function useReports() {
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const submitReport = useCallback(
-    async (form: ReportForm): Promise<{ newItem: PersonItem; newAdminItem: AdminReportItem }> => {
+    async (form: ReportForm): Promise<ReportSubmissionResult> => {
       setSubmitting(true);
+      setSubmitError(null);
       try {
         const res = await reportService.createReport(form);
         if (res.error || !res.data) {
-          throw res.error || new Error('Failed to create report');
+          const message = res.error?.message ?? 'No se pudo enviar el reporte';
+          setSubmitError(message);
+          throw new Error(message);
         }
-        return {
-          newItem: res.data.newItem,
-          newAdminItem: res.data.newAdminReport
-        };
+        return res.data;
       } finally {
         setSubmitting(false);
       }
@@ -36,7 +39,8 @@ export function useReports() {
 
   return {
     submitting,
+    submitError,
     submitReport,
-    submitSighting
+    submitSighting,
   };
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PersonItem } from '../types/person';
 import { PersonCard } from '../components/PersonCard';
+import { ListEmptyState } from '../../../components/common/AsyncListState';
 
 interface DesaparecidosViewProps {
   items: PersonItem[];
@@ -45,14 +46,21 @@ export const DesaparecidosView: React.FC<DesaparecidosViewProps> = ({
       </div>
 
       <div className="flex flex-col gap-4">
-        {desaparecidos.map((person) => (
-          <PersonCard
-            key={person.id}
-            item={person}
-            onSelect={onSelectPerson}
-            layout="horizontal"
+        {desaparecidos.length === 0 ? (
+          <ListEmptyState
+            title="No hay personas desaparecidas registradas"
+            description="Cuando existan reportes verificados en esta categoría, aparecerán aquí."
           />
-        ))}
+        ) : (
+          desaparecidos.map((person) => (
+            <PersonCard
+              key={person.id}
+              item={person}
+              onSelect={onSelectPerson}
+              layout="horizontal"
+            />
+          ))
+        )}
       </div>
 
       {/* Floating Action Button (FAB) for reporting */}

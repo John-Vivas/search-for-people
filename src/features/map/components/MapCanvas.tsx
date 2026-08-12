@@ -7,6 +7,8 @@ import {
 import { defaultMapProviderFactory } from '../services/mapProvider';
 import type { MapProviderInstance } from '../types/map.types';
 import { resolveMapDisplay } from '../services/clustering';
+import { isMapDisplayZone } from '../../../types/emergency-zone';
+
 import {
   buildMarkerHtml,
   buildClusterHtml,
@@ -16,8 +18,10 @@ import {
 
 interface MapCanvasProps {
   zones: EmergencyZone[];
+  allZones: EmergencyZone[];
   locations: MapLocation[];
   zoneFilter: string;
+  departmentFilter: string;
   selectedLocationId: string | null;
   selectedZoneId: string | null;
   onLocationSelect: (location: MapLocation) => void;
@@ -32,8 +36,10 @@ const ZONE_ZOOM = 11;
 
 export function MapCanvas({
   zones,
+  allZones,
   locations,
   zoneFilter,
+  departmentFilter,
   selectedLocationId,
   selectedZoneId,
   onLocationSelect,
@@ -73,11 +79,21 @@ export function MapCanvas({
 
     const zoom = provider.getZoom();
     zoomRef.current = zoom;
-    const display = resolveMapDisplay(zones, locations, zoom, zoneFilter);
+    const display = resolveMapDisplay(
+      zones,
+      locations,
+      zoom,
+      zoneFilter,
+      departmentFilter,
+      allZones
+    );
 
-    zones.forEach((zone) => {
-      if (!zone.active || !zone.affectedArea) return;
-      const isActive = selectedZoneId === zone.id || zoneFilter === zone.id;
+    zones.filter(isMapDisplayZone).forEach((zone) => {
+      if (!zone.affectedArea || zone.latitude == null || zone.longitude == null) return;
+      const isActive =
+        selectedZoneId === zone.id ||
+        zoneFilter === zone.id ||
+        (departmentFilter !== 'ALL' && zone.parentId === departmentFilter);
       const areaStyle = buildZoneAreaStyle(isActive);
       provider.addCircle(
         `zone-area-${zone.id}`,
@@ -97,7 +113,7 @@ export function MapCanvas({
           `${cluster.label}: ${cluster.count} registros`,
           () => {
             if (display.mode === 'zones') {
-              const zone = zones.find((z) => z.id === cluster.zoneId);
+              const zone = allZones.find((z) => z.id === cluster.zoneId);
               if (zone) onZoneSelect(zone);
             } else if (onClusterSelect) {
               onClusterSelect(cluster);
@@ -135,8 +151,10 @@ export function MapCanvas({
     renderMarkers();
   }, [
     zones,
+    allZones,
     locations,
     zoneFilter,
+    departmentFilter,
     selectedLocationId,
     selectedZoneId,
     centerOnZone,
@@ -149,7 +167,7 @@ export function MapCanvas({
     const provider = providerRef.current;
     if (!provider || !containerRef.current) return;
 
-    if (centerOnZone) {
+    if (centerOnZone?.latitude != null && centerOnZone.longitude != null) {
       provider.setView([centerOnZone.latitude, centerOnZone.longitude], ZONE_ZOOM);
       zoomRef.current = ZONE_ZOOM;
       renderMarkers();

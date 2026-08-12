@@ -7,8 +7,12 @@ import type {
   ReportInsert,
   ReportSearchFilters,
   ReportStatus,
-  ReportUpdate,
 } from '../types/report.db';
+import {
+  mapAdminQueueRows,
+  type AdminReportQueueRow,
+} from '../mappers/report.mapper';
+import type { AdminReportItem } from '../types/report';
 
 const REPORT_COLUMNS =
   'id, reporter_id, report_type, person_id, pet_id, description, status, reviewed_by, reviewed_at, submitted_at, updated_at' as const;
@@ -86,10 +90,29 @@ export const reportsService = {
     }
   },
 
-  async updateReportStatus(
-    id: string,
+  /** Admin queue with private reporter fields — via SECURITY DEFINER RPC */
+  async getAdminReportQueue(limit = 100): Promise<ServiceResponse<AdminReportItem[]>> {
+    if (isMockMode()) {
+      return mockApiCall([]);
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.rpc('get_admin_report_queue', {
+        p_limit: limit,
+      });
+
+      if (error) return fail(error, 'No se pudieron cargar los reportes administrativos');
+      return ok(mapAdminQueueRows((data ?? []) as AdminReportQueueRow[]));
+    } catch (error) {
+      return fail(error, 'No se pudieron cargar los reportes administrativos');
+    }
+  },
+
+  async moderateReport(
+    reportId: string,
     status: ReportStatus,
-    reviewedBy?: string
+    notes?: string
   ): Promise<ServiceResponse<ReportPublic>> {
     if (isMockMode()) {
       return fail(new Error('Mock mode'), 'Moderación disponible con Supabase');
@@ -97,30 +120,24 @@ export const reportsService = {
 
     try {
       const supabase = getSupabaseClient();
-      const { data, error } = await supabase
-        .from('reports')
-        .update({
-          status,
-          reviewed_by: reviewedBy ?? null,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select(REPORT_COLUMNS)
-        .single();
+      const { data, error } = await supabase.rpc('moderate_report', {
+        p_report_id: reportId,
+        p_status: status,
+        p_notes: notes ?? null,
+      });
 
-      if (error) return fail(error, 'No se pudo actualizar el estado del reporte');
+      if (error) return fail(error, 'No se pudo actualizar el reporte');
       return ok(data as ReportPublic);
     } catch (error) {
-      return fail(error, 'No se pudo actualizar el estado del reporte');
+      return fail(error, 'No se pudo actualizar el reporte');
     }
   },
 
-  async approveReport(id: string, reviewedBy?: string): Promise<ServiceResponse<ReportPublic>> {
-    return this.updateReportStatus(id, 'APPROVED', reviewedBy);
+  async approveReport(id: string, notes?: string): Promise<ServiceResponse<ReportPublic>> {
+    return this.moderateReport(id, 'APPROVED', notes);
   },
 
-  async rejectReport(id: string, reviewedBy?: string): Promise<ServiceResponse<ReportPublic>> {
-    return this.updateReportStatus(id, 'REJECTED', reviewedBy);
+  async rejectReport(id: string, notes?: string): Promise<ServiceResponse<ReportPublic>> {
+    return this.moderateReport(id, 'REJECTED', notes);
   },
 };

@@ -21,6 +21,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
   };
 
   const featuredItems = items.slice(0, 4);
+  const missingCount = items.filter((i) => i.type === 'desaparecido').length;
+  const foundCount = items.filter((i) => i.type === 'encontrado').length;
+  const nnCount = items.filter((i) => i.type === 'nn').length;
+  const petCount = items.filter((i) => i.type === 'mascota').length;
 
   return (
     <div className="pb-24 md:pb-12 pt-6">
@@ -72,7 +76,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
               <span className="material-symbols-outlined text-[#93000a] text-[26px]">person_search</span>
             </div>
             <span className="text-sm font-bold text-[#191c1d] text-center">Personas desaparecidas</span>
-            <span className="text-[11px] text-[#ba1a1a] font-semibold mt-1">120 activos</span>
+            <span className="text-[11px] text-[#ba1a1a] font-semibold mt-1">{missingCount} activos</span>
           </button>
 
           <button
@@ -83,7 +87,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
               <span className="material-symbols-outlined text-[#00685d] text-[26px]">handshake</span>
             </div>
             <span className="text-sm font-bold text-[#191c1d] text-center">Personas encontradas</span>
-            <span className="text-[11px] text-[#00685d] font-semibold mt-1">45 reunidos</span>
+            <span className="text-[11px] text-[#00685d] font-semibold mt-1">{foundCount} registrados</span>
           </button>
 
           <button
@@ -94,7 +98,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
               <span className="material-symbols-outlined text-[#3d4947] text-[26px]">help_center</span>
             </div>
             <span className="text-sm font-bold text-[#191c1d] text-center">Personas sin identificar (NN)</span>
-            <span className="text-[11px] text-[#8e711f] font-semibold mt-1">12 casos</span>
+            <span className="text-[11px] text-[#8e711f] font-semibold mt-1">{nnCount} casos</span>
           </button>
 
           <button
@@ -105,7 +109,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
               <span className="material-symbols-outlined text-[#735802] text-[26px]">pets</span>
             </div>
             <span className="text-sm font-bold text-[#191c1d] text-center">Mascotas perdidas</span>
-            <span className="text-[11px] text-[#735802] font-semibold mt-1">30 reportes</span>
+            <span className="text-[11px] text-[#735802] font-semibold mt-1">{petCount} reportes</span>
           </button>
         </div>
 
@@ -124,22 +128,22 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
       <section className="mb-10 max-w-5xl mx-auto px-4">
         <div className="bg-[#f3f4f5] rounded-2xl p-4 md:p-6 border border-[#e1e3e4] flex justify-between items-center overflow-x-auto gap-4 scrollbar-hide">
           <div className="flex flex-col items-center min-w-[90px] flex-1">
-            <span className="text-2xl md:text-3xl font-black text-[#ba1a1a]">120</span>
+            <span className="text-2xl md:text-3xl font-black text-[#ba1a1a]">{missingCount}</span>
             <span className="text-xs font-medium text-[#3d4947]">Desaparecidos</span>
           </div>
           <div className="w-px h-10 bg-[#bcc9c6] hidden sm:block"></div>
           <div className="flex flex-col items-center min-w-[90px] flex-1">
-            <span className="text-2xl md:text-3xl font-black text-[#00685d]">45</span>
+            <span className="text-2xl md:text-3xl font-black text-[#00685d]">{foundCount}</span>
             <span className="text-xs font-medium text-[#3d4947]">Encontrados</span>
           </div>
           <div className="w-px h-10 bg-[#bcc9c6] hidden sm:block"></div>
           <div className="flex flex-col items-center min-w-[90px] flex-1">
-            <span className="text-2xl md:text-3xl font-black text-[#436370]">12</span>
+            <span className="text-2xl md:text-3xl font-black text-[#436370]">{nnCount}</span>
             <span className="text-xs font-medium text-[#3d4947]">NN Identificándose</span>
           </div>
           <div className="w-px h-10 bg-[#bcc9c6] hidden sm:block"></div>
           <div className="flex flex-col items-center min-w-[90px] flex-1">
-            <span className="text-2xl md:text-3xl font-black text-[#735802]">30</span>
+            <span className="text-2xl md:text-3xl font-black text-[#735802]">{petCount}</span>
             <span className="text-xs font-medium text-[#3d4947]">Mascotas</span>
           </div>
         </div>

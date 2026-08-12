@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PersonItem } from '../types/person';
+import { ListEmptyState } from '../../../components/common/AsyncListState';
 
 interface NNViewProps {
   items: PersonItem[];
@@ -74,7 +75,15 @@ export const NNView: React.FC<NNViewProps> = ({ items, onIdentifyPerson }) => {
 
       {/* Grid for NN Persons */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {nnList.map((nn) => (
+        {nnList.length === 0 ? (
+          <div className="col-span-full">
+            <ListEmptyState
+              title="No hay personas sin identificar (NN) registradas"
+              description="Los casos NN aparecerán aquí para que la comunidad ayude a identificarlos."
+            />
+          </div>
+        ) : (
+          nnList.map((nn) => (
           <article
             key={nn.id}
             className="bg-white rounded-xl overflow-hidden shadow-xs border border-[#e1e3e4] flex flex-col group hover:shadow-md transition-shadow duration-300"
@@ -133,7 +142,8 @@ export const NNView: React.FC<NNViewProps> = ({ items, onIdentifyPerson }) => {
               </button>
             </div>
           </article>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

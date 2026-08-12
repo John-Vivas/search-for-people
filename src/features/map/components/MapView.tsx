@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MapViewProps } from '../types/map.types';
 import { MapCanvas } from './MapCanvas';
 import { MapFilters } from './MapFilters';
@@ -6,10 +6,13 @@ import { MapLegend } from './MapLegend';
 import { ZoneDetails } from './ZoneDetails';
 import { LocationPopup } from './LocationPopup';
 import { LocationList } from './LocationList';
+import { getCitiesForDepartment, getDepartmentZones } from '../utils/zoneTree';
+import { isDepartmentZone } from '../../../types/emergency-zone';
 
 export const MapView: React.FC<MapViewProps> = ({
   locations,
   zones,
+  mapDisplayZones,
   selectedLocation,
   selectedZone,
   activeZoneStats,
@@ -20,36 +23,68 @@ export const MapView: React.FC<MapViewProps> = ({
   onViewLocationDetail,
   onViewZoneRecords,
 }) => {
-  const activeZone = selectedZone ?? (filters.zoneId !== 'ALL'
-    ? zones.find((z) => z.id === filters.zoneId) ?? null
-    : null);
+  const departments = useMemo(() => getDepartmentZones(zones), [zones]);
 
-  const handleZoneFilterChange = (zoneId: string) => {
-    onFiltersChange({ zoneId });
-    if (zoneId === 'ALL') {
-      onZoneSelect(null);
-    } else {
-      const zone = zones.find((z) => z.id === zoneId);
-      if (zone) onZoneSelect(zone);
+  const cityOptions = useMemo(() => {
+    if (filters.departmentId === 'ALL') return mapDisplayZones;
+    return getCitiesForDepartment(zones, filters.departmentId);
+  }, [filters.departmentId, mapDisplayZones, zones]);
+
+  const activeZone =
+    selectedZone ??
+    (filters.zoneId !== 'ALL'
+      ? zones.find((z) => z.id === filters.zoneId) ?? null
+      : filters.departmentId !== 'ALL'
+      ? zones.find((z) => z.id === filters.departmentId) ?? null
+      : null);
+
+  const centerOnZone =
+    activeZone && !isDepartmentZone(activeZone) && activeZone.latitude != null
+      ? activeZone
+      : null;
+
+  const resetFilters = () => {
+    onZoneSelect(null);
+    onFiltersChange({ zoneId: 'ALL', departmentId: 'ALL' });
+  };
+
+  const handleFilterChange = (partial: Partial<typeof filters>) => {
+    if (partial.zoneId !== undefined) {
+      onFiltersChange(partial);
+      if (partial.zoneId === 'ALL') {
+        if (filters.departmentId !== 'ALL') {
+          const dept = zones.find((z) => z.id === filters.departmentId);
+          if (dept) onZoneSelect(dept);
+          else onZoneSelect(null);
+        } else {
+          onZoneSelect(null);
+        }
+      } else {
+        const zone = zones.find((z) => z.id === partial.zoneId);
+        if (zone) onZoneSelect(zone);
+      }
+      return;
     }
+
+    if (partial.departmentId !== undefined) {
+      onFiltersChange({ ...partial, zoneId: 'ALL' });
+      if (partial.departmentId === 'ALL') {
+        onZoneSelect(null);
+      } else {
+        const dept = zones.find((z) => z.id === partial.departmentId);
+        if (dept) onZoneSelect(dept);
+      }
+      return;
+    }
+
+    onFiltersChange(partial);
   };
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] md:h-[calc(100vh-72px)] overflow-hidden">
-      {/* Panel lateral / superior de filtros en desktop */}
       <aside className="hidden lg:flex flex-col w-80 shrink-0 border-r border-[#e1e3e4] bg-[#f8f9fa] overflow-y-auto">
         <div className="p-4 space-y-4">
-          <MapFilters
-            filters={filters}
-            zones={zones}
-            onChange={(partial) => {
-              if (partial.zoneId !== undefined) {
-                handleZoneFilterChange(partial.zoneId);
-              } else {
-                onFiltersChange(partial);
-              }
-            }}
-          />
+          <MapFilters filters={filters} zones={zones} onChange={handleFilterChange} />
           <MapLegend />
         </div>
 
@@ -70,19 +105,30 @@ export const MapView: React.FC<MapViewProps> = ({
         </div>
       </aside>
 
-      {/* Área del mapa */}
       <div className="relative flex-1 min-h-0 flex flex-col">
-        {/* Filtros móvil / tablet */}
         <div className="lg:hidden p-3 bg-white border-b border-[#e1e3e4] shrink-0 overflow-x-auto hide-scrollbar">
           <div className="flex gap-2 min-w-max">
             <select
-              value={filters.zoneId}
-              onChange={(e) => handleZoneFilterChange(e.target.value)}
+              value={filters.departmentId}
+              onChange={(e) => handleFilterChange({ departmentId: e.target.value, zoneId: 'ALL' })}
               className="min-h-[44px] px-3 rounded-xl border border-[#e1e3e4] bg-white text-sm font-medium cursor-pointer"
-              aria-label="Filtrar por zona"
+              aria-label="Filtrar por departamento"
             >
-              <option value="ALL">Todas las zonas</option>
-              {zones.map((z) => (
+              <option value="ALL">Todos los departamentos</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filters.zoneId}
+              onChange={(e) => handleFilterChange({ zoneId: e.target.value })}
+              className="min-h-[44px] px-3 rounded-xl border border-[#e1e3e4] bg-white text-sm font-medium cursor-pointer"
+              aria-label="Filtrar por ciudad"
+            >
+              <option value="ALL">Todas las ciudades</option>
+              {cityOptions.map((z) => (
                 <option key={z.id} value={z.id}>
                   {z.name}
                 </option>
@@ -91,7 +137,7 @@ export const MapView: React.FC<MapViewProps> = ({
             <select
               value={filters.type}
               onChange={(e) =>
-                onFiltersChange({
+                handleFilterChange({
                   type: e.target.value as typeof filters.type,
                   status:
                     e.target.value === 'PET' || e.target.value === 'FACILITY'
@@ -110,7 +156,7 @@ export const MapView: React.FC<MapViewProps> = ({
             <select
               value={filters.status}
               onChange={(e) =>
-                onFiltersChange({ status: e.target.value as typeof filters.status })
+                handleFilterChange({ status: e.target.value as typeof filters.status })
               }
               disabled={filters.type === 'PET' || filters.type === 'FACILITY'}
               className="min-h-[44px] px-3 rounded-xl border border-[#e1e3e4] bg-white text-sm font-medium cursor-pointer disabled:opacity-50"
@@ -126,23 +172,23 @@ export const MapView: React.FC<MapViewProps> = ({
 
         <div className="relative flex-1 min-h-[240px]">
           <MapCanvas
-            zones={zones}
+            zones={mapDisplayZones}
+            allZones={zones}
             locations={locations}
             zoneFilter={filters.zoneId}
+            departmentFilter={filters.departmentId}
             selectedLocationId={selectedLocation?.id ?? null}
             selectedZoneId={activeZone?.id ?? null}
-            centerOnZone={activeZone}
+            centerOnZone={centerOnZone}
             onLocationSelect={onLocationSelect}
             onZoneSelect={onZoneSelect}
           />
 
-          {/* Leyenda flotante desktop en mapa */}
           <div className="hidden md:block absolute bottom-4 left-4 z-10 max-w-[180px]">
             <MapLegend />
           </div>
         </div>
 
-        {/* Panel inferior móvil: zona o registro seleccionado */}
         <div className="lg:hidden shrink-0 max-h-[45vh] overflow-y-auto bg-[#f8f9fa] border-t border-[#e1e3e4]">
           {selectedLocation ? (
             <div className="p-3">
@@ -157,10 +203,7 @@ export const MapView: React.FC<MapViewProps> = ({
               <ZoneDetails
                 stats={activeZoneStats}
                 onViewRecords={onViewZoneRecords}
-                onClose={() => {
-                  onZoneSelect(null);
-                  onFiltersChange({ zoneId: 'ALL' });
-                }}
+                onClose={resetFilters}
               />
             </div>
           ) : (
@@ -184,7 +227,6 @@ export const MapView: React.FC<MapViewProps> = ({
         </div>
       </div>
 
-      {/* Panel derecho desktop: detalle */}
       <aside className="hidden lg:flex flex-col w-96 shrink-0 border-l border-[#e1e3e4] bg-[#f8f9fa] overflow-y-auto">
         <div className="p-4">
           {selectedLocation ? (
@@ -197,10 +239,7 @@ export const MapView: React.FC<MapViewProps> = ({
             <ZoneDetails
               stats={activeZoneStats}
               onViewRecords={onViewZoneRecords}
-              onClose={() => {
-                onZoneSelect(null);
-                onFiltersChange({ zoneId: 'ALL' });
-              }}
+              onClose={resetFilters}
             />
           ) : (
             <div className="text-center py-12 px-4">
@@ -209,7 +248,7 @@ export const MapView: React.FC<MapViewProps> = ({
               </span>
               <h3 className="text-base font-bold text-[#191c1d] mb-1">Mapa de emergencia</h3>
               <p className="text-sm text-[#6d7a77]">
-                Selecciona una zona o un registro para ver más información
+                Selecciona un departamento, ciudad o registro para ver más información
               </p>
             </div>
           )}

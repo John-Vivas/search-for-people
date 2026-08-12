@@ -4,21 +4,18 @@ export type PersonMapStatus = 'MISSING' | 'FOUND' | 'UNIDENTIFIED';
 
 export type FacilityType = 'HOSPITAL' | 'MEDICAL_CENTER' | 'SHELTER' | 'OTHER';
 
-export interface EmergencyZone {
-  id: string;
-  name: string;
-  department: string;
-  latitude: number;
-  longitude: number;
-  active: boolean;
-  /** Radio aproximado en metros para visualización MVP */
-  affectedArea?: number;
-}
+export type { ZoneType, EmergencyZoneNode } from '../../../types/emergency-zone';
+
+/** Nodo geográfico usado en mapa y filtros */
+export type EmergencyZone = import('../../../types/emergency-zone').EmergencyZoneNode;
 
 export interface MapFilter {
   type: 'ALL' | 'PERSON' | 'PET' | 'FACILITY';
   status: 'ALL' | PersonMapStatus;
+  /** Ciudad/municipio/distrito específico, o ALL */
   zoneId: string;
+  /** Departamento, o ALL */
+  departmentId: string;
 }
 
 export interface MapLocationBase {
@@ -47,6 +44,7 @@ export interface PetLocation extends MapLocationBase {
   name: string;
   photo?: string;
   lastSeenLocation?: string;
+  currentLocation?: string;
   lastSeenDate: string;
 }
 
@@ -86,18 +84,23 @@ export interface MapCluster {
 export interface ZoneStats {
   zoneId: string;
   zoneName: string;
+  zoneType: import('../../../types/emergency-zone').ZoneType;
   department: string;
+  parentId?: string | null;
   total: number;
   missing: number;
   found: number;
   unidentified: number;
   pets: number;
   facilities: number;
+  /** Desglose por ciudades/municipios hijos (departamentos) */
+  childStats?: ZoneStats[];
 }
 
 export interface MapViewProps {
   locations: MapLocation[];
   zones: EmergencyZone[];
+  mapDisplayZones: EmergencyZone[];
   selectedLocation: MapLocation | null;
   selectedZone: EmergencyZone | null;
   activeZoneStats: ZoneStats | null;

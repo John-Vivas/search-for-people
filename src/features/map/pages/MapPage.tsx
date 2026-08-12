@@ -14,6 +14,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onViewLocationDetail }) => {
     filters,
     filteredLocations,
     activeZoneStats,
+    mapDisplayZones,
     selectedLocation,
     selectedZone,
     updateFilters,
@@ -52,6 +53,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onViewLocationDetail }) => {
     <MapView
       locations={filteredLocations}
       zones={zones}
+      mapDisplayZones={mapDisplayZones}
       selectedLocation={selectedLocation}
       selectedZone={selectedZone}
       activeZoneStats={activeZoneStats}

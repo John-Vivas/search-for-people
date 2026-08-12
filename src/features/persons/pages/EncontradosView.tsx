@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { PersonItem } from '../types/person';
+import { ListEmptyState } from '../../../components/common/AsyncListState';
 
 interface EncontradosViewProps {
   items: PersonItem[];
@@ -73,7 +74,15 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
 
       {/* List / Grid of Found Persons */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {encontrados.map((item) => (
+        {encontrados.length === 0 ? (
+          <div className="col-span-full">
+            <ListEmptyState
+              title="No hay personas encontradas registradas"
+              description="Los casos de personas localizadas aparecerán aquí cuando estén en la base de datos."
+            />
+          </div>
+        ) : (
+          encontrados.map((item) => (
           <article
             key={item.id}
             onClick={() => onSelectPerson(item)}
@@ -145,7 +154,8 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
               </div>
             </div>
           </article>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
