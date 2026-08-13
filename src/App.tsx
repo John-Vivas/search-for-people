@@ -256,8 +256,15 @@ export function App() {
             <p className="text-[11px] text-[#8e711f]">
               En caso de emergencia con riesgo inminente, comunícate siempre con la línea oficial 123 (Policía Nacional) o la Fiscalía General de la Nación.
             </p>
-            <div className="pt-2 text-[10px] text-[#bcc9c6]">
-              © {new Date().getFullYear()} Estamos Buscando • Red Comunitarias de Apoyo
+            <div className="pt-2 text-[10px] text-[#bcc9c6] flex items-center justify-center gap-2">
+              <span>© {new Date().getFullYear()} Estamos Buscando • Red Comunitarias de Apoyo</span>
+              <span aria-hidden="true">·</span>
+              <button
+                onClick={() => handleNavigate('admin')}
+                className="text-[#bcc9c6] hover:text-[#436370] hover:underline transition-colors cursor-pointer"
+              >
+                Panel de moderación
+              </button>
             </div>
           </div>
         </footer>

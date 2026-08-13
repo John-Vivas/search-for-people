@@ -8,7 +8,7 @@ interface BottomNavBarProps {
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onNavigate }) => {
   return (
     <nav className="fixed bottom-0 left-0 w-full z-50 bg-white border-t border-[#e1e3e4] md:hidden shadow-lg">
-      <div className="grid grid-cols-6 h-16">
+      <div className="grid grid-cols-5 h-16">
         <button
           onClick={() => onNavigate('home')}
           className={`flex flex-col items-center justify-center gap-1 transition-colors ${
@@ -77,21 +77,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onNaviga
             volunteer_activism
           </span>
           <span className="text-[10px]">Ayuda</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('admin')}
-          className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-            currentTab.startsWith('admin') ? 'text-[#00685d] font-bold' : 'text-[#6d7a77]'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-[22px]"
-            data-weight={currentTab.startsWith('admin') ? 'fill' : 'normal'}
-          >
-            admin_panel_settings
-          </span>
-          <span className="text-[10px]">Admin</span>
         </button>
       </div>
     </nav>

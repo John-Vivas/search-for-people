@@ -131,16 +131,6 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           <span className="material-symbols-outlined text-[20px]">add_alert</span>
           Reportar
         </button>
-
-        <button
-          onClick={() => onNavigate('admin')}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold border border-[#bcc9c6] text-[#436370] hover:bg-[#edeeef] transition-colors cursor-pointer ${
-            currentTab.startsWith('admin') ? 'bg-[#c6e8f8] text-[#001f29] font-bold' : ''
-          }`}
-        >
-          <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-          Admin
-        </button>
       </nav>
 
       {/* Mobile Search button */}
