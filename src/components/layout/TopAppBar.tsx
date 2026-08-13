@@ -109,6 +109,18 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
         </button>
 
         <button
+          onClick={() => onNavigate('ayuda')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+            currentTab === 'ayuda'
+              ? 'bg-[#008376] text-white shadow-xs'
+              : 'text-[#3d4947] hover:bg-[#edeeef]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[20px]">volunteer_activism</span>
+          Ayuda
+        </button>
+
+        <button
           onClick={() => onNavigate('reportar')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
             currentTab === 'reportar'

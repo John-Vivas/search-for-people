@@ -21,6 +21,7 @@ import { PersonDetailView } from '@/src/views/PersonDetailView';
 import { MapView } from '@/src/views/MapView';
 import type { MapLocation } from '@/src/features/map/types/map.types';
 import { ReportFlowView } from '@/src/views/ReportFlowView';
+import { AidBoardView } from '@/src/views/AidBoardView';
 import { AdminOverviewView } from '@/src/views/AdminOverviewView';
 import { AdminReportDetailView } from '@/src/views/AdminReportDetailView';
 
@@ -191,6 +192,8 @@ export function App() {
             onNavigateSearch={() => handleNavigate('buscar')}
           />
         )}
+
+        {currentTab === 'ayuda' && <AidBoardView />}
 
         {currentTab === 'detail' &&
           renderPersonContent(
