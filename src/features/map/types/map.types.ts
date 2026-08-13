@@ -117,6 +117,8 @@ export interface MapProviderConfig {
   zoom: number;
   tileUrl?: string;
   attribution?: string;
+  /** When false, disables all user interaction and hides the zoom control (static preview) */
+  interactive?: boolean;
 }
 
 export interface MapProviderInstance {

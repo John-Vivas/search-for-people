@@ -34,13 +34,13 @@ export const DEFAULT_PAGE_SIZE = 24;
 
 /** Public list projection for persons — never include private reporter fields */
 export const PERSON_PUBLIC_COLUMNS =
-  'id, zone_id, full_name, identifier_code, approximate_age, age_is_approximate, sex, status, last_seen_at, is_verified, updated_at, current_location_id, current_facility_id, last_seen_location_id' as const;
+  'id, zone_id, full_name, identifier_code, approximate_age, age_is_approximate, sex, status, last_seen_at, is_verified, updated_at, current_location_id, current_facility_id, last_seen_location_id, primary_photo_url' as const;
 
 export const PERSON_DETAIL_COLUMNS =
   `${PERSON_PUBLIC_COLUMNS}, description, physical_description, clothing_description, distinguishing_features` as const;
 
 export const PET_PUBLIC_COLUMNS =
-  'id, zone_id, name, species, breed, color, sex, approximate_age, status, last_seen_at, is_verified, updated_at, current_location_id, last_seen_location_id' as const;
+  'id, zone_id, name, species, breed, color, sex, approximate_age, status, last_seen_at, is_verified, updated_at, current_location_id, last_seen_location_id, primary_photo_url' as const;
 
 export const PET_DETAIL_COLUMNS = `${PET_PUBLIC_COLUMNS}, description` as const;
 

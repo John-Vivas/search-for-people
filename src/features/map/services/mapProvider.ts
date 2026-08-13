@@ -8,10 +8,18 @@ export function createLeafletProvider(
   container: HTMLElement,
   config: MapProviderConfig
 ): MapProviderInstance {
+  const interactive = config.interactive !== false;
+
   const map = L.map(container, {
     center: config.center,
     zoom: config.zoom,
     zoomControl: false,
+    dragging: interactive,
+    scrollWheelZoom: interactive,
+    doubleClickZoom: interactive,
+    boxZoom: interactive,
+    keyboard: interactive,
+    touchZoom: interactive,
   });
 
   L.tileLayer(config.tileUrl ?? DEFAULT_TILE, {
@@ -19,7 +27,9 @@ export function createLeafletProvider(
     maxZoom: 19,
   }).addTo(map);
 
-  L.control.zoom({ position: 'topright' }).addTo(map);
+  if (interactive) {
+    L.control.zoom({ position: 'topright' }).addTo(map);
+  }
 
   const layers = new Map<string, L.Layer>();
 

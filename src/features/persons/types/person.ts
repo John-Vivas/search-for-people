@@ -18,6 +18,8 @@ export interface PersonItem {
   location: string;
   city: string;
   coordinates: [number, number]; // [lat, lng]
+  /** True when coordinates come from a real location/zone (not the default fallback) */
+  hasKnownLocation?: boolean;
   updatedAt: string;
   lastSeenDate: string;
   verified: boolean;
