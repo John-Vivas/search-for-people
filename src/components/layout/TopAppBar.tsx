@@ -31,7 +31,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
         ) : (
           <div
             onClick={() => onNavigate('home')}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-2 cursor-pointer group select-none"
           >
             <span
               className="material-symbols-outlined text-[#00685d] text-[28px] md:text-[32px] group-hover:scale-105 transition-transform"
