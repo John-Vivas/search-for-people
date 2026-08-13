@@ -176,8 +176,60 @@ function buildReportFormFromFlow(input: {
   };
 }
 
+export interface DuplicateMatch {
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
+const PERSON_STATUS_LABEL: Record<string, string> = {
+  MISSING: 'Desaparecido',
+  FOUND: 'Encontrado',
+  IDENTIFIED: 'Identificado',
+  UNIDENTIFIED: 'NN',
+  TRANSFERRED: 'Trasladado',
+  REUNITED: 'Reunido',
+};
+
+/**
+ * Busca registros existentes parecidos (mismo nombre en la misma ciudad) para
+ * avisar de posibles duplicados antes de crear. No bloquea: solo informa.
+ */
+async function findSimilarRecords(form: ReportForm): Promise<DuplicateMatch[]> {
+  if (isMockMode()) return [];
+  const name = form.subjectName?.trim();
+  if (!name || name.length < 3) return [];
+  const zoneId = form.locationCityZoneId ?? undefined;
+
+  try {
+    if (form.itemType === 'mascota') {
+      const res = await petsService.searchPets({ query: name, zoneId, limit: 5 });
+      return (res.data ?? []).map((p) => ({
+        id: p.id,
+        title: p.name ?? 'Mascota',
+        subtitle: [p.species, p.breed, p.color].filter(Boolean).join(' · ') || 'Mascota',
+      }));
+    }
+
+    const res = await personsService.searchPersons({ query: name, zoneId, limit: 5 });
+    return (res.data ?? []).map((p) => ({
+      id: p.id,
+      title: p.full_name ?? 'Sin nombre',
+      subtitle: [
+        PERSON_STATUS_LABEL[p.status] ?? p.status,
+        p.approximate_age != null ? `${p.approximate_age} años` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export const reportService = {
   buildReportFormFromFlow,
+  findSimilarRecords,
 
   async createReport(form: ReportForm): Promise<ServiceResponse<ReportSubmissionResult>> {
     if (isMockMode()) {

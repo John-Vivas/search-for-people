@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ItemType } from '@/src/features/persons/types/person';
 import { ReporterRole } from '@/src/features/reports/types/reporter';
 import { useReports } from '@/src/features/reports/hooks/useReports';
-import { reportService, type ReportSubmissionResult } from '@/src/features/reports/services/reportService';
+import { reportService, type ReportSubmissionResult, type DuplicateMatch } from '@/src/features/reports/services/reportService';
+import type { ReportForm } from '@/src/features/reports/types/report';
 import { useImageUpload } from '@/src/hooks/useImageUpload';
 import { ImageUploader } from '@/src/components/ui/ImageUploader';
 import { zonesService } from '@/src/features/map/services/zones.service';
@@ -45,6 +46,10 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
   const [subjectSpecies, setSubjectSpecies] = useState('Perro');
   const [subjectBreed, setSubjectBreed] = useState('');
   const [subjectColor, setSubjectColor] = useState('');
+
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
+  const [pendingForm, setPendingForm] = useState<ReportForm | null>(null);
+  const [checkingDup, setCheckingDup] = useState(false);
 
   const isPet = itemType === 'mascota';
 
@@ -93,44 +98,70 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
     folderCategory,
   });
 
-  const handleFinalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const doSubmit = async (form: ReportForm) => {
     try {
-      // Only persist a real uploaded Cloudinary URL. A local blob: preview
-      // (upload not finished) or an empty value is stored as '' so the UI
-      // shows the "Sin foto" fallback instead of a broken/placeholder image.
-      const finalPhotoUrl =
-        primaryUrl && primaryUrl.startsWith('http') ? primaryUrl : '';
-
-      const form = reportService.buildReportFormFromFlow({
-        itemType,
-        reporterRole,
-        reporterName,
-        reporterDoc,
-        reporterPhone,
-        reporterRel,
-        subjectName,
-        subjectAge,
-        subjectGender,
-        subjectCity: selectedCity?.label,
-        subjectCityZoneId: subjectCityId || null,
-        subjectNeighborhood,
-        subjectAddress,
-        subjectSpecies,
-        subjectBreed,
-        subjectColor,
-        subjectDate,
-        subjectObs,
-        photoPreview: finalPhotoUrl,
-      });
-
       const result = await submitReport(form);
       onReportSubmitted(result);
       setStep(5);
     } catch {
       // submitError set in hook
     }
+  };
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Only persist a real uploaded Cloudinary URL. A local blob: preview
+    // (upload not finished) or an empty value is stored as '' so the UI
+    // shows the "Sin foto" fallback instead of a broken/placeholder image.
+    const finalPhotoUrl =
+      primaryUrl && primaryUrl.startsWith('http') ? primaryUrl : '';
+
+    const form = reportService.buildReportFormFromFlow({
+      itemType,
+      reporterRole,
+      reporterName,
+      reporterDoc,
+      reporterPhone,
+      reporterRel,
+      subjectName,
+      subjectAge,
+      subjectGender,
+      subjectCity: selectedCity?.label,
+      subjectCityZoneId: subjectCityId || null,
+      subjectNeighborhood,
+      subjectAddress,
+      subjectSpecies,
+      subjectBreed,
+      subjectColor,
+      subjectDate,
+      subjectObs,
+      photoPreview: finalPhotoUrl,
+    });
+
+    // Duplicate check (non-blocking): if similar records exist, ask first.
+    setCheckingDup(true);
+    const matches = await reportService.findSimilarRecords(form);
+    setCheckingDup(false);
+    if (matches.length > 0) {
+      setDuplicateMatches(matches);
+      setPendingForm(form);
+      return;
+    }
+
+    await doSubmit(form);
+  };
+
+  const confirmNotDuplicate = () => {
+    const form = pendingForm;
+    setDuplicateMatches([]);
+    setPendingForm(null);
+    if (form) doSubmit(form);
+  };
+
+  const cancelDuplicate = () => {
+    setDuplicateMatches([]);
+    setPendingForm(null);
   };
 
   return (
@@ -634,13 +665,13 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || checkingDup}
               className="w-full h-14 bg-[#00685d] hover:bg-[#008376] disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-sm rounded-full shadow-md flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[20px]">
-                {submitting ? 'hourglass_empty' : 'send'}
+                {submitting || checkingDup ? 'hourglass_empty' : 'send'}
               </span>
-              {submitting ? 'Enviando reporte...' : 'Publicar Reporte'}
+              {checkingDup ? 'Verificando duplicados...' : submitting ? 'Enviando reporte...' : 'Publicar Reporte'}
             </button>
           </form>
         </section>
@@ -677,6 +708,57 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             </button>
           </div>
         </section>
+      )}
+
+      {/* Duplicate warning modal */}
+      {duplicateMatches.length > 0 && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Posibles duplicados"
+          onClick={cancelDuplicate}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[#e1e3e4] flex items-start gap-2">
+              <span className="material-symbols-outlined text-[#8e5a00] mt-0.5">warning</span>
+              <div>
+                <h3 className="text-base font-bold text-[#191c1d]">Posible duplicado</h3>
+                <p className="text-xs text-[#6d7a77]">
+                  Ya existen registros parecidos en esta ciudad. Revisa si es alguno de estos antes de crear uno nuevo.
+                </p>
+              </div>
+            </div>
+
+            <ul className="p-4 space-y-2">
+              {duplicateMatches.map((m) => (
+                <li key={m.id} className="border border-[#e1e3e4] rounded-xl px-3 py-2">
+                  <p className="text-sm font-bold text-[#191c1d]">{m.title}</p>
+                  <p className="text-xs text-[#6d7a77]">{m.subtitle}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="px-5 py-4 border-t border-[#e1e3e4] flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={cancelDuplicate}
+                className="flex-1 h-11 rounded-full border border-[#bcc9c6] text-[#3d4947] font-bold text-sm hover:bg-[#e7e8e9] transition-colors cursor-pointer"
+              >
+                Revisar / Cancelar
+              </button>
+              <button
+                onClick={confirmNotDuplicate}
+                disabled={submitting}
+                className="flex-1 h-11 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Es nuevo, continuar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
