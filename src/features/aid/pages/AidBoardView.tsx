@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useAidRequests } from '@/src/features/aid/hooks/useAidRequests';
 import { aidRequestsService } from '@/src/features/aid/services/aidRequests.service';
 import { AidRequestCard } from '@/src/features/aid/components/AidRequestCard';
@@ -50,12 +50,20 @@ export const AidBoardView: React.FC = () => {
     refetch();
   };
 
-  const advance = async (req: AidRequest, status: 'EN_ROUTE' | 'DELIVERED') => {
-    setBusyId(req.id);
-    await aidRequestsService.advance(req.id, status);
-    setBusyId(null);
-    refetch();
-  };
+  const advance = useCallback(
+    async (req: AidRequest, status: 'EN_ROUTE' | 'DELIVERED') => {
+      setBusyId(req.id);
+      await aidRequestsService.advance(req.id, status);
+      setBusyId(null);
+      refetch();
+    },
+    [refetch]
+  );
+
+  // Stable handlers so memoized AidRequestCard doesn't re-render every tick.
+  const handleCommit = useCallback((r: AidRequest) => setCommitting(r), []);
+  const handleEnRoute = useCallback((r: AidRequest) => advance(r, 'EN_ROUTE'), [advance]);
+  const handleDelivered = useCallback((r: AidRequest) => advance(r, 'DELIVERED'), [advance]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
@@ -117,9 +125,9 @@ export const AidBoardView: React.FC = () => {
               key={req.id}
               request={req}
               busy={busyId === req.id}
-              onCommit={(r) => setCommitting(r)}
-              onMarkEnRoute={(r) => advance(r, 'EN_ROUTE')}
-              onMarkDelivered={(r) => advance(r, 'DELIVERED')}
+              onCommit={handleCommit}
+              onMarkEnRoute={handleEnRoute}
+              onMarkDelivered={handleDelivered}
             />
           ))}
         </div>
@@ -136,7 +144,7 @@ export const AidBoardView: React.FC = () => {
           onClick={() => setCommitting(null)}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-[#191c1d] mb-1">Comprometerse a entregar</h3>
+            <h3 className="text-base font-bold text-[#191c1d] mb-1">Ayudar con esta solicitud</h3>
             <p className="text-sm text-[#6d7a77] mb-4">
               Confirmas que tu organización llevará este recurso.
             </p>
@@ -167,7 +175,7 @@ export const AidBoardView: React.FC = () => {
                 disabled={busyId === committing.id}
                 className="flex-1 h-11 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
               >
-                Comprometerme
+                Confirmar ayuda
               </button>
             </div>
           </div>

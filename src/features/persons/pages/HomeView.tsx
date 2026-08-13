@@ -122,6 +122,25 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
             <span className="text-sm font-bold text-[#191c1d]">Explorar en Mapa Georreferenciado</span>
           </button>
         </div>
+
+        {/* Aid coordination CTA → /ayuda */}
+        <div className="mt-4">
+          <button
+            onClick={() => onNavigate('ayuda')}
+            className="w-full flex items-center gap-4 p-4 md:p-5 rounded-2xl bg-[#00685d] text-white shadow-sm hover:bg-[#008376] transition-all group cursor-pointer text-left"
+          >
+            <span className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[26px]">volunteer_activism</span>
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-base font-bold">¿Deseas ayudar?</span>
+              <span className="block text-sm text-white/85">
+                Mira los puntos de recolección y las solicitudes de recursos (agua, alimento, refugio) en tiempo real.
+              </span>
+            </span>
+            <span className="material-symbols-outlined shrink-0">arrow_forward</span>
+          </button>
+        </div>
       </section>
 
       {/* Quick Stats Bar */}

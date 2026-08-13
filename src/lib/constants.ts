@@ -5,30 +5,6 @@ export const APP_NAME = 'Estamos Buscando';
 /** Data source for gradual mock → Supabase migration */
 export type DataSourceMode = 'mock' | 'supabase';
 
-export const QUERY_STALE_TIME = {
-  /** Lists that change infrequently (zones, facilities) */
-  STATIC: 5 * 60 * 1000,
-  /** Person/pet/report lists */
-  LIST: 60 * 1000,
-  /** Detail views */
-  DETAIL: 30 * 1000,
-} as const;
-
-/** TanStack Query key roots — used in hooks (Phase 3+) */
-export const QUERY_KEYS = {
-  emergencyZones: ['emergency-zones'] as const,
-  locations: ['locations'] as const,
-  facilities: ['facilities'] as const,
-  persons: ['persons'] as const,
-  person: (id: string) => ['persons', id] as const,
-  pets: ['pets'] as const,
-  pet: (id: string) => ['pets', id] as const,
-  reports: ['reports'] as const,
-  report: (id: string) => ['reports', id] as const,
-  personEvents: (personId: string) => ['person-events', personId] as const,
-  mapData: ['map-data'] as const,
-} as const;
-
 /** Default pagination */
 export const DEFAULT_PAGE_SIZE = 24;
 

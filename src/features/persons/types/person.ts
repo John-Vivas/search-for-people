@@ -20,6 +20,8 @@ export interface PersonItem {
   coordinates: [number, number]; // [lat, lng]
   /** True when coordinates come from a real location/zone (not the default fallback) */
   hasKnownLocation?: boolean;
+  /** For pets only: their lifecycle status, so found pets can be listed too. */
+  petStatus?: 'LOST' | 'FOUND' | 'REUNITED';
   updatedAt: string;
   lastSeenDate: string;
   verified: boolean;

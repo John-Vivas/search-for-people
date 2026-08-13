@@ -237,7 +237,6 @@ export const reportService = {
     }
 
     try {
-      console.log('[REPORT FLOW] step 1: Zone + location resolution');
       const cityZone = await resolveCityZone(form);
       const zoneId = cityZone?.id ?? null;
 
@@ -258,14 +257,12 @@ export const reportService = {
       const lastSeenAt = form.eventDate
         ? new Date(form.eventDate).toISOString()
         : new Date().toISOString();
-      console.log('[REPORT FLOW] step 1: success');
 
       const identifierCode =
         form.itemType === 'nn'
           ? `NN-${Date.now().toString().slice(-6)}`
           : `REP-${Date.now().toString().slice(-6)}`;
 
-      console.log('[REPORT FLOW] step 2: RPC submit_community_report');
       const supabase = getSupabaseClient();
       const { data: rpcRows, error: rpcError } = await supabase.rpc('submit_community_report', {
         p_reporter_type: mapRoleUIToType(form.reporterRole),
@@ -304,7 +301,6 @@ export const reportService = {
             : rpcError.message || 'Error al ejecutar RPC submit_community_report';
         return fail(rpcError, msg);
       }
-      console.log('[REPORT FLOW] step 2: success');
 
       const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
       const reportId = rpcResult?.report_id || `rep-${Date.now()}`;
@@ -312,7 +308,6 @@ export const reportService = {
       const petId = rpcResult?.pet_id || null;
       const submittedAt = rpcResult?.submitted_at || new Date().toISOString();
 
-      console.log('[REPORT FLOW] step 3: Admin DTO construction');
       const fallbackRow: AdminReportQueueRow = {
         report_id: reportId,
         report_type: reportType,
@@ -341,8 +336,6 @@ export const reportService = {
         zone_city: form.locationZone.split(',')[0]?.trim() ?? null,
       };
 
-      console.log('[REPORT FLOW] step 3: success');
-
       return ok({
         adminReport: mapAdminQueueRowToAdminReportItem(fallbackRow),
         publishToPublicCatalog: false,
@@ -356,8 +349,8 @@ export const reportService = {
     }
   },
 
-  async submitSighting(sighting: SightingReport): Promise<ServiceResponse<boolean>> {
-    console.info('[reportService] Avistamiento registrado (pendiente de integración):', sighting.id);
+  async submitSighting(_sighting: SightingReport): Promise<ServiceResponse<boolean>> {
+    // TODO: persist sightings once the moderation flow supports them.
     return mockApiCall(true);
   },
 

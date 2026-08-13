@@ -37,7 +37,7 @@ function Badge({ bg, text, children }: { bg: string; text: string; children: Rea
   );
 }
 
-export const AidRequestCard: React.FC<AidRequestCardProps> = ({
+const AidRequestCardBase: React.FC<AidRequestCardProps> = ({
   request,
   busy = false,
   onCommit,
@@ -118,7 +118,7 @@ export const AidRequestCard: React.FC<AidRequestCardProps> = ({
               onClick={() => onCommit(request)}
               className="flex-1 h-11 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
             >
-              Comprometerse
+              Ayudar
             </button>
           )}
           {isCommitted && (
@@ -149,3 +149,6 @@ export const AidRequestCard: React.FC<AidRequestCardProps> = ({
     </article>
   );
 };
+
+/** Memoized: a card re-renders only when its request/handlers change. */
+export const AidRequestCard = React.memo(AidRequestCardBase);
