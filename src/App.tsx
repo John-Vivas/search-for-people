@@ -19,7 +19,6 @@ import { DesaparecidosView } from '@/src/views/DesaparecidosView';
 import { NNView } from '@/src/views/NNView';
 import { PersonDetailView } from '@/src/views/PersonDetailView';
 import { MapView } from '@/src/views/MapView';
-import type { MapLocation } from '@/src/features/map/types/map.types';
 import { ReportFlowView } from '@/src/views/ReportFlowView';
 import { AidBoardView } from '@/src/views/AidBoardView';
 import { AdminOverviewView } from '@/src/views/AdminOverviewView';
@@ -178,11 +177,7 @@ export function App() {
           )}
 
         {currentTab === 'mapa' && (
-          <MapView
-            onViewLocationDetail={(location: MapLocation) => {
-              console.info('Ver detalle de registro del mapa:', location.id);
-            }}
-          />
+          <MapView onViewLocationDetail={() => { /* map detail navigation TBD */ }} />
         )}
 
         {currentTab === 'reportar' && (
@@ -274,9 +269,7 @@ export function App() {
         item={selectedPerson}
         isOpen={isSightingModalOpen}
         onClose={() => setIsSightingModalOpen(false)}
-        onSubmitSighting={(sighting) => {
-          console.log('Avistamiento registrado:', sighting);
-        }}
+        onSubmitSighting={() => { /* sighting persistence TBD */ }}
       />
 
       <BottomNavBar currentTab={currentTab} onNavigate={handleNavigate} />
