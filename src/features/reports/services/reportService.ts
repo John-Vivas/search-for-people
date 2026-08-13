@@ -136,6 +136,9 @@ function buildReportFormFromFlow(input: {
   subjectCityZoneId?: string | null;
   subjectNeighborhood?: string;
   subjectAddress?: string;
+  subjectSpecies?: string;
+  subjectBreed?: string;
+  subjectColor?: string;
   /** Legacy single free-text location; still accepted as fallback */
   subjectZone?: string;
   subjectDate: string;
@@ -164,6 +167,9 @@ function buildReportFormFromFlow(input: {
     locationCityZoneId: input.subjectCityZoneId ?? null,
     locationNeighborhood: input.subjectNeighborhood,
     locationAddress: input.subjectAddress,
+    petSpecies: input.subjectSpecies,
+    petBreed: input.subjectBreed,
+    petColor: input.subjectColor,
     eventDate: input.subjectDate,
     observations: input.subjectObs,
     photoUrl: input.photoPreview,
@@ -224,7 +230,10 @@ export const reportService = {
         p_description: form.observations || null,
         p_last_seen_at: lastSeenAt,
         p_zone_id: zoneId,
-        p_pet_species: form.itemType === 'mascota' ? 'Mascota' : null,
+        p_pet_species:
+          form.itemType === 'mascota' ? form.petSpecies?.trim() || 'Mascota' : null,
+        p_pet_breed: form.itemType === 'mascota' ? form.petBreed?.trim() || null : null,
+        p_pet_color: form.itemType === 'mascota' ? form.petColor?.trim() || null : null,
         p_photo_url: form.photoUrl || null,
         p_latitude: latitude,
         p_longitude: longitude,

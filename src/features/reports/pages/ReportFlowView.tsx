@@ -42,6 +42,11 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
   const [subjectAddress, setSubjectAddress] = useState('');
   const [subjectDate, setSubjectDate] = useState('');
   const [subjectObs, setSubjectObservations] = useState('');
+  const [subjectSpecies, setSubjectSpecies] = useState('Perro');
+  const [subjectBreed, setSubjectBreed] = useState('');
+  const [subjectColor, setSubjectColor] = useState('');
+
+  const isPet = itemType === 'mascota';
 
   const [cities, setCities] = useState<CityOption[]>([]);
 
@@ -112,6 +117,9 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
         subjectCityZoneId: subjectCityId || null,
         subjectNeighborhood,
         subjectAddress,
+        subjectSpecies,
+        subjectBreed,
+        subjectColor,
         subjectDate,
         subjectObs,
         photoPreview: finalPhotoUrl,
@@ -166,6 +174,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <button
               onClick={() => {
                 setItemType('desaparecido');
+                setSubjectGender('Masculino');
                 setStep(2);
               }}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
@@ -183,6 +192,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <button
               onClick={() => {
                 setItemType('encontrado');
+                setSubjectGender('Masculino');
                 setStep(2);
               }}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
@@ -200,6 +210,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <button
               onClick={() => {
                 setItemType('nn');
+                setSubjectGender('Masculino');
                 setStep(2);
               }}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
@@ -217,6 +228,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <button
               onClick={() => {
                 setItemType('mascota');
+                setSubjectGender('Macho');
                 setStep(2);
               }}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center group cursor-pointer ${
@@ -446,17 +458,57 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-[#191c1d] mb-1">
-                  Nombre o Descripción *
+                  {isPet ? 'Nombre de la mascota *' : 'Nombre o Descripción *'}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Juan Pérez o 'Hombre alto con chaqueta azul'"
+                  placeholder={isPet ? "Ej. Lucas" : "Ej. Juan Pérez o 'Hombre alto con chaqueta azul'"}
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
                   className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
                 />
               </div>
+
+              {isPet && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-[#191c1d] mb-1">Especie *</label>
+                    <select
+                      required
+                      value={subjectSpecies}
+                      onChange={(e) => setSubjectSpecies(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                    >
+                      {['Perro', 'Gato', 'Ave', 'Conejo', 'Otro'].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#191c1d] mb-1">Raza</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Pomerania, Criollo…"
+                      value={subjectBreed}
+                      onChange={(e) => setSubjectBreed(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#191c1d] mb-1">Color</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Café con blanco"
+                      value={subjectColor}
+                      onChange={(e) => setSubjectColor(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-[#191c1d] mb-1">
@@ -533,28 +585,19 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
               <div>
                 <label className="block text-xs font-bold text-[#191c1d] mb-1">Sexo</label>
                 <div className="flex gap-4 h-12 items-center">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="Masculino"
-                      checked={subjectGender === 'Masculino'}
-                      onChange={() => setSubjectGender('Masculino')}
-                      className="text-[#00685d]"
-                    />
-                    Masculino
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="Femenino"
-                      checked={subjectGender === 'Femenino'}
-                      onChange={() => setSubjectGender('Femenino')}
-                      className="text-[#00685d]"
-                    />
-                    Femenino
-                  </label>
+                  {(isPet ? ['Macho', 'Hembra'] : ['Masculino', 'Femenino']).map((g) => (
+                    <label key={g} className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={g}
+                        checked={subjectGender === g}
+                        onChange={() => setSubjectGender(g)}
+                        className="text-[#00685d]"
+                      />
+                      {g}
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -564,7 +607,9 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Señas particulares (tatuajes, cicatrices), ropa que vestía, estado de salud..."
+                  placeholder={isPet
+                    ? 'Señas particulares (collar, manchas, tamaño), comportamiento, condición de salud...'
+                    : 'Señas particulares (tatuajes, cicatrices), ropa que vestía, estado de salud...'}
                   value={subjectObs}
                   onChange={(e) => setSubjectObservations(e.target.value)}
                   className="w-full p-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
