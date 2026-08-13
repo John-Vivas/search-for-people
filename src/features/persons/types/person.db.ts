@@ -8,7 +8,7 @@ export type {
   MediaType,
   ReporterType,
   UserRole,
-} from '../../../types/enums';
+} from '@/src/types/enums';
 
 export type {
   PersonRow,
@@ -22,10 +22,10 @@ export type {
   ProfileRow,
   ReporterRow,
   OrganizationRow,
-} from '../../../types/database';
+} from '@/src/types/database';
 
 /** Domain alias — maps to persons table */
-export type Person = import('../../../types/database').PersonRow;
+export type Person = import('@/src/types/database').PersonRow;
 
 /** Fields safe for public list/detail views */
 export type PersonPublic = Pick<

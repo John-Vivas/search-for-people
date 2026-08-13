@@ -1,5 +1,5 @@
 import React from 'react';
-import { PersonItem } from '../types/person';
+import { PersonItem } from '@/src/features/persons/types/person';
 
 interface PersonDetailViewProps {
   item: PersonItem;

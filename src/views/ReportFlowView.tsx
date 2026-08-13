@@ -1,1 +1,1 @@
-export * from '../features/reports/pages/ReportFlowView';
+export * from '@/src/features/reports/pages/ReportFlowView';

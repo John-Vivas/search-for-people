@@ -1,19 +1,19 @@
-import { PersonItem } from '../../persons/types/person';
-import { INITIAL_ITEMS } from '../../../data/mock/mockPersons';
-import { isMockMode } from '../../../lib/dataSource';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import { loadEnrichmentContext } from '../../../lib/enrichmentContext';
-import { petsService } from './pets.service';
-import { zonesService } from '../../map/services/zones.service';
+import { PersonItem } from '@/src/features/persons/types/person';
+import { INITIAL_ITEMS } from '@/src/data/mock/mockPersons';
+import { isMockMode } from '@/src/lib/dataSource';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { petsService } from '@/src/features/pets/services/pets.service';
+import { zonesService } from '@/src/features/map/services/zones.service';
 import {
   mapPetToItem,
   mapPetsToItems,
   type PetMappableRow,
-} from '../mappers/pet.mapper';
+} from '@/src/features/pets/mappers/pet.mapper';
 import {
   resolveZoneIdByCityName,
   zonePublicToInfo,
-} from '../../persons/mappers/person.mapper';
+} from '@/src/features/persons/mappers/person.mapper';
 
 function getMockPets(): PersonItem[] {
   const saved = localStorage.getItem('estamos_buscando_items');

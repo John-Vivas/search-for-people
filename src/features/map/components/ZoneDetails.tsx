@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZoneStats } from '../types/map.types';
+import { ZoneStats } from '@/src/features/map/types/map.types';
 
 interface ZoneDetailsProps {
   stats: ZoneStats;

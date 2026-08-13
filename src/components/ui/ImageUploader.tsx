@@ -8,7 +8,7 @@ import {
   Star,
   Image as ImageIcon,
 } from 'lucide-react';
-import type { ProcessedUploadItem } from '../../services/cloudinary/cloudinary.types';
+import type { ProcessedUploadItem } from '@/src/services/cloudinary/cloudinary.types';
 
 interface ImageUploaderProps {
   items: ProcessedUploadItem[];

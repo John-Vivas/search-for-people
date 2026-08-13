@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { MapProviderConfig, MapProviderInstance } from '../types/map.types';
+import { MapProviderConfig, MapProviderInstance } from '@/src/features/map/types/map.types';
 
 const DEFAULT_TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION = '&copy; OpenStreetMap contributors';

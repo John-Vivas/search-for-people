@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PersonItem } from '../types/person';
-import { personService } from '../services/personService';
-import { isMockMode } from '../../../lib/dataSource';
+import { PersonItem } from '@/src/features/persons/types/person';
+import { personService } from '@/src/features/persons/services/personService';
+import { isMockMode } from '@/src/lib/dataSource';
 
 export function usePersons() {
   const [items, setItems] = useState<PersonItem[]>([]);

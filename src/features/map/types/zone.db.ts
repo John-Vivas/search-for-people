@@ -1,14 +1,14 @@
-export type { FacilityType } from '../../../types/enums';
+export type { FacilityType } from '@/src/types/enums';
 export type {
   EmergencyZoneRow,
   LocationRow,
   FacilityRow,
-} from '../../../types/database';
+} from '@/src/types/database';
 
 /** Domain aliases */
-export type EmergencyZone = import('../../../types/database').EmergencyZoneRow;
-export type Location = import('../../../types/database').LocationRow;
-export type Facility = import('../../../types/database').FacilityRow;
+export type EmergencyZone = import('@/src/types/database').EmergencyZoneRow;
+export type Location = import('@/src/types/database').LocationRow;
+export type Facility = import('@/src/types/database').FacilityRow;
 
 export type EmergencyZonePublic = Pick<
   EmergencyZone,

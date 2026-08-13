@@ -1,7 +1,7 @@
 import React from 'react';
-import { MapLocation } from '../types/map.types';
-import { formatRelativeTime } from '../../../lib/utils';
-import { getMarkerStyle } from './MarkerIcon';
+import { MapLocation } from '@/src/features/map/types/map.types';
+import { formatRelativeTime } from '@/src/lib/utils';
+import { getMarkerStyle } from '@/src/features/map/components/MarkerIcon';
 
 interface LocationPopupProps {
   location: MapLocation;

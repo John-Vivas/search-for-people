@@ -1,10 +1,10 @@
-import type { ReportStatus, ReportType } from '../types/report.db';
-import type { PersonStatus } from '../../persons/types/person.db';
-import type { PetStatus } from '../../pets/types/pet.db';
-import type { ItemType } from '../../persons/types/person';
-import type { AdminReportItem } from '../types/report';
-import { mapTypeToRoleUI } from '../types/reporter';
-import type { ReporterType } from '../types/reporter';
+import type { ReportStatus, ReportType } from '@/src/features/reports/types/report.db';
+import type { PersonStatus } from '@/src/features/persons/types/person.db';
+import type { PetStatus } from '@/src/features/pets/types/pet.db';
+import type { ItemType } from '@/src/features/persons/types/person';
+import type { AdminReportItem } from '@/src/features/reports/types/report';
+import { mapTypeToRoleUI } from '@/src/features/reports/types/reporter';
+import type { ReporterType } from '@/src/features/reports/types/reporter';
 
 /** Row returned by get_admin_report_queue RPC */
 export interface AdminReportQueueRow {

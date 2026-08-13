@@ -1,1 +1,1 @@
-export * from './mock';
+export * from '@/src/data/mock';

@@ -1,4 +1,4 @@
-import type { EmergencyZoneNode } from '../../types/emergency-zone';
+import type { EmergencyZoneNode } from '@/src/types/emergency-zone';
 
 /**
  * Árbol geográfico del MVP — fuente de verdad para mock (reemplazable por Supabase).

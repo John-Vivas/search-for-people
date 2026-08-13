@@ -1,18 +1,18 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { DEFAULT_PAGE_SIZE } from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { DEFAULT_PAGE_SIZE } from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import type {
   ReportPublic,
   ReportInsert,
   ReportSearchFilters,
   ReportStatus,
-} from '../types/report.db';
+} from '@/src/features/reports/types/report.db';
 import {
   mapAdminQueueRows,
   type AdminReportQueueRow,
-} from '../mappers/report.mapper';
-import type { AdminReportItem } from '../types/report';
+} from '@/src/features/reports/mappers/report.mapper';
+import type { AdminReportItem } from '@/src/features/reports/types/report';
 
 const REPORT_COLUMNS =
   'id, reporter_id, report_type, person_id, pet_id, description, status, reviewed_by, reviewed_at, submitted_at, updated_at' as const;

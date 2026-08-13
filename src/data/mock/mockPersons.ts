@@ -1,4 +1,4 @@
-import { PersonItem } from '../../features/persons/types/person';
+import { PersonItem } from '@/src/features/persons/types/person';
 
 export const INITIAL_ITEMS: PersonItem[] = [
   {

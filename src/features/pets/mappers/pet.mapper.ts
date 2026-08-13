@@ -1,9 +1,9 @@
-import type { PetStatus } from '../types/pet.db';
-import type { PersonItem } from '../../persons/types/person';
+import type { PetStatus } from '@/src/features/pets/types/pet.db';
+import type { PersonItem } from '@/src/features/persons/types/person';
 import type {
   PersonEnrichmentContext,
   ZoneInfo,
-} from '../../persons/mappers/person.mapper';
+} from '@/src/features/persons/mappers/person.mapper';
 
 /** DB pet row fields used by the mapper */
 export interface PetMappableRow {

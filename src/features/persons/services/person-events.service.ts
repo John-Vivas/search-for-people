@@ -2,11 +2,11 @@
  * Person events service — Phase 6
  * Append-only event history for persons.
  */
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import type { PersonEventRow } from '../../../types/database';
-import type { PersonEventType } from '../../../types/enums';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import type { PersonEventRow } from '@/src/types/database';
+import type { PersonEventType } from '@/src/types/enums';
 
 export type PersonEvent = PersonEventRow;
 

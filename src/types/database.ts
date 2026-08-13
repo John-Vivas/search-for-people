@@ -9,7 +9,7 @@ import type {
   ReportType,
   ReporterType,
   UserRole,
-} from './enums';
+} from '@/src/types/enums';
 
 export interface OrganizationRow {
   id: string;

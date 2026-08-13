@@ -1,4 +1,4 @@
-import { AdminReportItem } from '../../reports/types/report';
+import { AdminReportItem } from '@/src/features/reports/types/report';
 
 export type AdminReportStatus = 'pending' | 'approved' | 'rejected';
 

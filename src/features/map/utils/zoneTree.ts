@@ -4,8 +4,8 @@ import {
   isDepartmentZone,
   isMapDisplayZone,
   ZONE_TYPES_FILTERABLE,
-} from '../../../types/emergency-zone';
-import type { MapLocation } from '../types/map.types';
+} from '@/src/types/emergency-zone';
+import type { MapLocation } from '@/src/features/map/types/map.types';
 
 export function buildZoneIndex(zones: EmergencyZoneNode[]): Map<string, EmergencyZoneNode> {
   return new Map(zones.map((z) => [z.id, z]));

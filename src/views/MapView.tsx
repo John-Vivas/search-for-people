@@ -1,1 +1,1 @@
-export { MapPage as MapView } from '../features/map/pages/MapPage';
+export { MapPage as MapView } from '@/src/features/map/pages/MapPage';

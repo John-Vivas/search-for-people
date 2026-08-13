@@ -1,13 +1,13 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { PET_DETAIL_COLUMNS, DEFAULT_PAGE_SIZE } from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { PET_DETAIL_COLUMNS, DEFAULT_PAGE_SIZE } from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import type {
   PetPublic,
   PetInsert,
   PetSearchFilters,
   PetUpdate,
-} from '../types/pet.db';
+} from '@/src/features/pets/types/pet.db';
 
 export type PetRecord = PetPublic & {
   description?: string | null;

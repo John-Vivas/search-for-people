@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AdminReportItem } from '../../reports/types/report';
-import { adminService } from '../services/adminService';
-import { isMockMode } from '../../../lib/dataSource';
+import { AdminReportItem } from '@/src/features/reports/types/report';
+import { adminService } from '@/src/features/admin/services/adminService';
+import { isMockMode } from '@/src/lib/dataSource';
 
 export function useAdminReports() {
   const [adminReports, setAdminReports] = useState<AdminReportItem[]>([]);

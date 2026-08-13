@@ -1,8 +1,8 @@
-import type { EmergencyZoneNode, ZoneType } from '../../../types/emergency-zone';
+import type { EmergencyZoneNode, ZoneType } from '@/src/types/emergency-zone';
 import {
   isCityLevelZone,
   isDepartmentZone,
-} from '../../../types/emergency-zone';
+} from '@/src/types/emergency-zone';
 
 /** Row shape returned from Supabase — hierarchical or legacy flat */
 export interface EmergencyZoneDbRow {

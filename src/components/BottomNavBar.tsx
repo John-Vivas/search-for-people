@@ -1,1 +1,1 @@
-export * from './layout/BottomNavBar';
+export * from '@/src/components/layout/BottomNavBar';

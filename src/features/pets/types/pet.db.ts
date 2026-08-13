@@ -1,8 +1,8 @@
-export type { PetStatus } from '../../../types/enums';
-export type { PetRow } from '../../../types/database';
+export type { PetStatus } from '@/src/types/enums';
+export type { PetRow } from '@/src/types/database';
 
 /** Domain alias — maps to pets table */
-export type Pet = import('../../../types/database').PetRow;
+export type Pet = import('@/src/types/database').PetRow;
 
 export type PetPublic = Pick<
   Pet,

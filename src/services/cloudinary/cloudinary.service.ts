@@ -2,12 +2,12 @@
  * Cloudinary Service — Browser image compression & unsigned REST upload
  */
 
-import { ok, fail, ServiceResponse } from '../../services/api/errors';
+import { ok, fail, ServiceResponse } from '@/src/services/api/errors';
 import type {
   CloudinaryUploadOptions,
   CloudinaryUploadResponse,
   CompressedImageResult,
-} from './cloudinary.types';
+} from '@/src/services/cloudinary/cloudinary.types';
 
 const MAX_IMAGE_WIDTH = 1200;
 const COMPRESSION_QUALITY = 0.8;

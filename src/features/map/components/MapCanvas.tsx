@@ -3,18 +3,18 @@ import {
   EmergencyZone,
   MapLocation,
   MapCluster,
-} from '../types/map.types';
-import { defaultMapProviderFactory } from '../services/mapProvider';
-import type { MapProviderInstance } from '../types/map.types';
-import { resolveMapDisplay } from '../services/clustering';
-import { isMapDisplayZone } from '../../../types/emergency-zone';
+} from '@/src/features/map/types/map.types';
+import { defaultMapProviderFactory } from '@/src/features/map/services/mapProvider';
+import type { MapProviderInstance } from '@/src/features/map/types/map.types';
+import { resolveMapDisplay } from '@/src/features/map/services/clustering';
+import { isMapDisplayZone } from '@/src/types/emergency-zone';
 
 import {
   buildMarkerHtml,
   buildClusterHtml,
   buildZoneAreaStyle,
   getMarkerStyle,
-} from './MarkerIcon';
+} from '@/src/features/map/components/MarkerIcon';
 
 interface MapCanvasProps {
   zones: EmergencyZone[];

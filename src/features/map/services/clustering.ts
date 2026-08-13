@@ -1,5 +1,5 @@
-import { MapLocation, MapCluster, EmergencyZone } from '../types/map.types';
-import { isMapDisplayZone } from '../../../types/emergency-zone';
+import { MapLocation, MapCluster, EmergencyZone } from '@/src/features/map/types/map.types';
+import { isMapDisplayZone } from '@/src/types/emergency-zone';
 
 const CLUSTER_ZOOM_THRESHOLD = 10;
 

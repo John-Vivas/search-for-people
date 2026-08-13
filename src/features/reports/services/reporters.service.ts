@@ -1,8 +1,8 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { isPostgrestRlsError } from '../../../lib/postgrestErrors';
-import { ok, fail, ServiceResponse } from '../../../services/api/errors';
-import type { ReporterType } from '../types/report.db';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { isPostgrestRlsError } from '@/src/lib/postgrestErrors';
+import { ok, fail, ServiceResponse } from '@/src/services/api/errors';
+import type { ReporterType } from '@/src/features/reports/types/report.db';
 
 export interface ReporterInsertPayload {
   reporter_type: ReporterType;

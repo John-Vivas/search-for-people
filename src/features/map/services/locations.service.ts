@@ -1,8 +1,8 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { LOCATION_COLUMNS, DEFAULT_PAGE_SIZE } from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import type { LocationInsert, LocationPublic, LocationSearchFilters, LocationUpdate } from '../types/zone.db';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { LOCATION_COLUMNS, DEFAULT_PAGE_SIZE } from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import type { LocationInsert, LocationPublic, LocationSearchFilters, LocationUpdate } from '@/src/features/map/types/zone.db';
 
 export const locationsService = {
   async getLocations(

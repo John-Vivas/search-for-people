@@ -1,1 +1,1 @@
-export * from '../features/persons/pages/DesaparecidosView';
+export * from '@/src/features/persons/pages/DesaparecidosView';

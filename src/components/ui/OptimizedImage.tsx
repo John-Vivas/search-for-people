@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getOptimizedImageUrl } from '../../services/cloudinary/cloudinary.service';
+import { getOptimizedImageUrl } from '@/src/services/cloudinary/cloudinary.service';
 import { User, Dog, ImageOff } from 'lucide-react';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {

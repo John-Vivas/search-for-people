@@ -1,1 +1,1 @@
-export * from '../features/persons/pages/NNView';
+export * from '@/src/features/persons/pages/NNView';

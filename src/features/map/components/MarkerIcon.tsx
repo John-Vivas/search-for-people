@@ -1,4 +1,4 @@
-import { MapLocationType, PersonMapStatus, FacilityType } from '../types/map.types';
+import { MapLocationType, PersonMapStatus, FacilityType } from '@/src/features/map/types/map.types';
 
 export interface MarkerStyle {
   bg: string;

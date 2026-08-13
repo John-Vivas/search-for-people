@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PersonItem } from '../types/person';
-import { OptimizedImage } from '../../../components/ui/OptimizedImage';
+import { PersonItem } from '@/src/features/persons/types/person';
+import { OptimizedImage } from '@/src/components/ui/OptimizedImage';
 
 interface PersonCardProps {
   item: PersonItem;

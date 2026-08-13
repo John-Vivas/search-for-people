@@ -1,15 +1,15 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
 import {
   EMERGENCY_ZONE_COLUMNS_FLAT,
   EMERGENCY_ZONE_COLUMNS_HIERARCHICAL,
-} from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import { EMERGENCY_ZONE_TREE } from '../../../data/mock/emergencyZones';
-import type { EmergencyZoneNode } from '../../../types/emergency-zone';
-import { isCityLevelZone, isDepartmentZone } from '../../../types/emergency-zone';
-import type { EmergencyZone, EmergencyZonePublic } from '../types/zone.db';
-import { isPostgrestMissingColumnError } from '../../../lib/postgrestErrors';
+} from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import { EMERGENCY_ZONE_TREE } from '@/src/data/mock/emergencyZones';
+import type { EmergencyZoneNode } from '@/src/types/emergency-zone';
+import { isCityLevelZone, isDepartmentZone } from '@/src/types/emergency-zone';
+import type { EmergencyZone, EmergencyZonePublic } from '@/src/features/map/types/zone.db';
+import { isPostgrestMissingColumnError } from '@/src/lib/postgrestErrors';
 import {
   buildCodeToIdMap,
   dbRowToPublic,
@@ -17,7 +17,7 @@ import {
   hasHierarchicalSchema,
   rowsToZoneNodes,
   rowToZoneNode,
-} from '../utils/zoneMappers';
+} from '@/src/features/map/utils/zoneMappers';
 
 type ZoneSchemaMode = 'hierarchical' | 'flat';
 

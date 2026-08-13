@@ -1,11 +1,11 @@
-export type { ReportStatus, ReportType, ReporterType } from '../../../types/enums';
-export type { ReportRow, ReporterRow } from '../../../types/database';
+export type { ReportStatus, ReportType, ReporterType } from '@/src/types/enums';
+export type { ReportRow, ReporterRow } from '@/src/types/database';
 
 /** Domain alias — maps to reports table */
-export type Report = import('../../../types/database').ReportRow;
+export type Report = import('@/src/types/database').ReportRow;
 
 /** PRIVATE — maps to reporters table. Never expose in public components. */
-export type Reporter = import('../../../types/database').ReporterRow;
+export type Reporter = import('@/src/types/database').ReporterRow;
 
 export type ReportPublic = Pick<
   Report,

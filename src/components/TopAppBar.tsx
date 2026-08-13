@@ -1,1 +1,1 @@
-export * from './layout/TopAppBar';
+export * from '@/src/components/layout/TopAppBar';

@@ -1,12 +1,12 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { FACILITY_PUBLIC_COLUMNS, DEFAULT_PAGE_SIZE } from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { FACILITY_PUBLIC_COLUMNS, DEFAULT_PAGE_SIZE } from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import type {
   FacilityInsert,
   FacilityPublic,
   FacilitySearchFilters,
-} from '../types/zone.db';
+} from '@/src/features/map/types/zone.db';
 
 export const facilitiesService = {
   async getFacilities(
