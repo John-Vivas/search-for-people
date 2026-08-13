@@ -13,14 +13,15 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const caseUrl = `${window.location.origin}/caso/${item.id}`;
     if (navigator.share) {
       navigator.share({
         title: `Estamos Buscando: ${item.name}`,
         text: `Información sobre ${item.name} (${item.code}) - ${item.location}`,
-        url: window.location.href,
+        url: caseUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(`${window.location.origin}/?id=${item.id}`);
+      navigator.clipboard.writeText(caseUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

@@ -144,7 +144,7 @@ export const AidBoardView: React.FC = () => {
           onClick={() => setCommitting(null)}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-[#191c1d] mb-1">Comprometerse a entregar</h3>
+            <h3 className="text-base font-bold text-[#191c1d] mb-1">Ayudar con esta solicitud</h3>
             <p className="text-sm text-[#6d7a77] mb-4">
               Confirmas que tu organización llevará este recurso.
             </p>
@@ -175,7 +175,7 @@ export const AidBoardView: React.FC = () => {
                 disabled={busyId === committing.id}
                 className="flex-1 h-11 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
               >
-                Comprometerme
+                Confirmar ayuda
               </button>
             </div>
           </div>

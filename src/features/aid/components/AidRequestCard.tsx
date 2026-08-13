@@ -118,7 +118,7 @@ const AidRequestCardBase: React.FC<AidRequestCardProps> = ({
               onClick={() => onCommit(request)}
               className="flex-1 h-11 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
             >
-              Comprometerse
+              Ayudar
             </button>
           )}
           {isCommitted && (
