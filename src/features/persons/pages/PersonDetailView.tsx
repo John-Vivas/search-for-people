@@ -119,21 +119,25 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
 
           <div className="w-full h-40 bg-[#e7e8e9] rounded-xl overflow-hidden relative mt-2 border border-[#bcc9c6]/40">
             {item.hasKnownLocation ? (
-              <>
+              <button
+                type="button"
+                onClick={() => setMapModalOpen(true)}
+                className="group absolute inset-0 w-full h-full cursor-pointer"
+                title="Ampliar mapa"
+                aria-label="Ampliar mapa de la ubicación"
+              >
                 <PersonLocationMap
                   coordinates={item.coordinates}
                   label={`${item.name} — ${item.location}`}
                   markerColor={markerColor}
+                  interactive={false}
                 />
-                <button
-                  onClick={() => setMapModalOpen(true)}
-                  className="absolute top-2 right-2 z-[500] flex items-center gap-1.5 bg-white/95 hover:bg-white text-[#00685d] text-xs font-bold px-3 py-1.5 rounded-full shadow-md backdrop-blur-xs transition-colors cursor-pointer"
-                  title="Ver mapa más grande"
-                >
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-white/95 text-[#00685d] text-xs font-bold px-3 py-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
                   <span className="material-symbols-outlined text-[16px]">open_in_full</span>
                   Ampliar
-                </button>
-              </>
+                </div>
+              </button>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#6d7a77]">
                 <span className="material-symbols-outlined text-[28px]">location_off</span>

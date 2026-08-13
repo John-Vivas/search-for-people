@@ -8,6 +8,8 @@ interface PersonLocationMapProps {
   /** Marker color (defaults to the "missing" red) */
   markerColor?: string;
   zoom?: number;
+  /** When false, renders a non-interactive static preview (clicks pass through) */
+  interactive?: boolean;
 }
 
 /**
@@ -19,6 +21,7 @@ export function PersonLocationMap({
   label,
   markerColor = '#ba1a1a',
   zoom = 15,
+  interactive = true,
 }: PersonLocationMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const providerRef = useRef<MapProviderInstance | null>(null);
@@ -29,6 +32,7 @@ export function PersonLocationMap({
     const provider = defaultMapProviderFactory(containerRef.current, {
       center: coordinates,
       zoom,
+      interactive,
     });
     providerRef.current = provider;
 
@@ -47,12 +51,12 @@ export function PersonLocationMap({
       provider.destroy();
       providerRef.current = null;
     };
-  }, [coordinates, label, markerColor, zoom]);
+  }, [coordinates, label, markerColor, zoom, interactive]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[128px] z-0"
+      className={`w-full h-full min-h-[128px] z-0 ${interactive ? '' : 'pointer-events-none'}`}
       role="application"
       aria-label={`Mapa: ${label}`}
     />
