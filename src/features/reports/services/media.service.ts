@@ -2,11 +2,11 @@
  * Media / Storage service — Phase 7
  * Handles Supabase Storage uploads and signed URLs.
  */
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
-import { ok, fail, ServiceResponse } from '../../../services/api/errors';
-import type { ReportMediaRow } from '../../../types/database';
-import type { MediaType } from '../../../types/enums';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
+import { ok, fail, ServiceResponse } from '@/src/services/api/errors';
+import type { ReportMediaRow } from '@/src/types/database';
+import type { MediaType } from '@/src/types/enums';
 
 export type ReportMedia = ReportMediaRow;
 
@@ -112,6 +112,8 @@ export const mediaService = {
     } catch (error) {
       return fail(error, 'No se pudo obtener la URL del archivo');
     }
+  },
+
   /**
    * Register Cloudinary uploaded image reference in PostgreSQL report_media table
    */
