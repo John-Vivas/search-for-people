@@ -67,7 +67,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
       >
         <div className="absolute top-3 left-3 z-10">{renderBadge()}</div>
 
-        <div className="w-full sm:w-32 h-44 sm:h-36 shrink-0 rounded-lg overflow-hidden bg-[#e7e8e9] relative">
+        <div className="w-full sm:w-32 h-44 sm:h-36 shrink-0 rounded-lg overflow-hidden bg-[#e7e8e9] relative sm:mt-9">
           <OptimizedImage
             src={item.photo}
             alt={item.name}
@@ -78,7 +78,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
           />
         </div>
 
-        <div className="flex flex-col justify-between flex-1 py-1">
+        <div className="flex flex-col justify-between flex-1 py-1 sm:pt-9">
           <div>
             <div className="flex justify-between items-start gap-2">
               <h3 className="text-lg font-bold text-[#191c1d] group-hover:text-[#00685d] transition-colors">
