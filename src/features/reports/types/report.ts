@@ -12,7 +12,16 @@ export interface ReportForm {
   subjectName: string;
   subjectAge: string;
   subjectGender: string;
+  /** Composed human-readable location (address, neighborhood, city) for display */
   locationZone: string;
+  /** City name (matches an emergency_zone) */
+  locationCity?: string;
+  /** Resolved emergency_zone id for the selected city */
+  locationCityZoneId?: string | null;
+  /** Neighborhood / barrio */
+  locationNeighborhood?: string;
+  /** Street address / dirección */
+  locationAddress?: string;
   eventDate: string;
   observations: string;
   photoUrl?: string;

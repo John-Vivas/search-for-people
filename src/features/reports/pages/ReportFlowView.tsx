@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ItemType } from '@/src/features/persons/types/person';
 import { ReporterRole } from '@/src/features/reports/types/reporter';
 import { useReports } from '@/src/features/reports/hooks/useReports';
 import { reportService, type ReportSubmissionResult } from '@/src/features/reports/services/reportService';
 import { useImageUpload } from '@/src/hooks/useImageUpload';
 import { ImageUploader } from '@/src/components/ui/ImageUploader';
+import { zonesService } from '@/src/features/map/services/zones.service';
+
+interface CityOption {
+  id: string;
+  label: string;
+}
 
 interface ReportFlowViewProps {
   onReportSubmitted: (result: ReportSubmissionResult) => void;
@@ -31,9 +37,33 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
   const [subjectName, setSubjectName] = useState('');
   const [subjectAge, setSubjectAge] = useState('');
   const [subjectGender, setSubjectGender] = useState('Masculino');
-  const [subjectZone, setSubjectZone] = useState('');
+  const [subjectCityId, setSubjectCityId] = useState('');
+  const [subjectNeighborhood, setSubjectNeighborhood] = useState('');
+  const [subjectAddress, setSubjectAddress] = useState('');
   const [subjectDate, setSubjectDate] = useState('');
   const [subjectObs, setSubjectObservations] = useState('');
+
+  const [cities, setCities] = useState<CityOption[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    zonesService.getEmergencyZones(true).then((res) => {
+      if (!active) return;
+      const options = (res.data ?? [])
+        .map((z) => ({
+          id: z.id,
+          label: z.city?.trim() || z.name,
+          department: z.department ?? '',
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+      setCities(options.map(({ id, label }) => ({ id, label })));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedCity = cities.find((c) => c.id === subjectCityId);
 
   const folderCategory =
     itemType === 'mascota'
@@ -78,7 +108,10 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
         subjectName,
         subjectAge,
         subjectGender,
-        subjectZone,
+        subjectCity: selectedCity?.label,
+        subjectCityZoneId: subjectCityId || null,
+        subjectNeighborhood,
+        subjectAddress,
         subjectDate,
         subjectObs,
         photoPreview: finalPhotoUrl,
@@ -427,14 +460,47 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-[#191c1d] mb-1">
-                  Zona, Barrio o Albergue *
+                  Ciudad *
+                </label>
+                <select
+                  required
+                  value={subjectCityId}
+                  onChange={(e) => setSubjectCityId(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                >
+                  <option value="" disabled>
+                    {cities.length ? 'Selecciona una ciudad' : 'Cargando ciudades…'}
+                  </option>
+                  {cities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Barrio
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="Ej. Centro Histórico, Bogotá"
-                  value={subjectZone}
-                  onChange={(e) => setSubjectZone(e.target.value)}
+                  placeholder="Ej. Chapinero, San Fernando…"
+                  value={subjectNeighborhood}
+                  onChange={(e) => setSubjectNeighborhood(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191c1d] mb-1">
+                  Dirección o punto de referencia
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Carrera 7 # 32-16, cerca al parque…"
+                  value={subjectAddress}
+                  onChange={(e) => setSubjectAddress(e.target.value)}
                   className="w-full h-12 px-4 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm text-[#191c1d] focus:border-[#00685d] outline-none"
                 />
               </div>
