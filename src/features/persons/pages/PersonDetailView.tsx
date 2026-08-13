@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PersonItem } from '@/src/features/persons/types/person';
 import { PersonLocationMap } from '@/src/features/persons/components/PersonLocationMap';
+import { LocationMapModal } from '@/src/features/persons/components/LocationMapModal';
 
 interface PersonDetailViewProps {
   item: PersonItem;
@@ -13,6 +14,11 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
   onOpenSightingModal,
   onBack
 }) => {
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+
+  const markerColor =
+    item.type === 'encontrado' ? '#00685d' : item.type === 'nn' ? '#8e711f' : '#ba1a1a';
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -113,11 +119,21 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
 
           <div className="w-full h-40 bg-[#e7e8e9] rounded-xl overflow-hidden relative mt-2 border border-[#bcc9c6]/40">
             {item.hasKnownLocation ? (
-              <PersonLocationMap
-                coordinates={item.coordinates}
-                label={`${item.name} — ${item.location}`}
-                markerColor={item.type === 'encontrado' ? '#00685d' : item.type === 'nn' ? '#8e711f' : '#ba1a1a'}
-              />
+              <>
+                <PersonLocationMap
+                  coordinates={item.coordinates}
+                  label={`${item.name} — ${item.location}`}
+                  markerColor={markerColor}
+                />
+                <button
+                  onClick={() => setMapModalOpen(true)}
+                  className="absolute top-2 right-2 z-[500] flex items-center gap-1.5 bg-white/95 hover:bg-white text-[#00685d] text-xs font-bold px-3 py-1.5 rounded-full shadow-md backdrop-blur-xs transition-colors cursor-pointer"
+                  title="Ver mapa más grande"
+                >
+                  <span className="material-symbols-outlined text-[16px]">open_in_full</span>
+                  Ampliar
+                </button>
+              </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#6d7a77]">
                 <span className="material-symbols-outlined text-[28px]">location_off</span>
@@ -126,6 +142,17 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
             )}
           </div>
         </div>
+
+        {item.hasKnownLocation && (
+          <LocationMapModal
+            open={mapModalOpen}
+            onClose={() => setMapModalOpen(false)}
+            coordinates={item.coordinates}
+            title={item.name}
+            subtitle={`${item.location}, ${item.city}`}
+            markerColor={markerColor}
+          />
+        )}
 
         {/* Descripción Física */}
         <div className="bg-white p-5 rounded-2xl border border-[#e1e3e4] shadow-xs flex flex-col gap-3">
