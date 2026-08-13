@@ -54,6 +54,25 @@
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Interactive UI chrome shouldn't place a text caret or select text on click
+   (buttons, nav items, clickable cards). Content text stays selectable. */
+button,
+[role="button"],
+.cursor-pointer {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Real form fields must remain selectable / editable even inside clickable
+   containers. */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .hide-scrollbar::-webkit-scrollbar,
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
