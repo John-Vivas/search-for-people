@@ -21,7 +21,9 @@ import {
 import {
   resolveZoneIdByCityName,
   zonePublicToInfo,
+  type ZoneInfo,
 } from '@/src/features/persons/mappers/person.mapper';
+import { geocodeAddress } from '@/src/services/geocoding/geocoding.service';
 
 export interface ReportSubmissionResult {
   adminReport: AdminReportItem;
@@ -37,11 +39,26 @@ function parseApproximateAge(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-async function resolveZoneId(locationZone: string): Promise<string | null> {
-  const cityCandidate = locationZone.split(',')[0]?.trim() ?? locationZone.trim();
+/**
+ * Resolve the city's emergency zone (id + coordinates). Prefers an explicit
+ * zone id (from the city <select>); falls back to matching a city name against
+ * the seeded zones. Returns the full ZoneInfo so the caller can use the city
+ * coordinates as a geocoding fallback.
+ */
+async function resolveCityZone(form: ReportForm): Promise<ZoneInfo | null> {
   const zonesRes = await zonesService.getEmergencyZones(true);
   const zones = (zonesRes.data ?? []).map(zonePublicToInfo);
-  return resolveZoneIdByCityName(cityCandidate, zones) ?? null;
+
+  if (form.locationCityZoneId) {
+    return zones.find((z) => z.id === form.locationCityZoneId) ?? null;
+  }
+
+  const cityCandidate =
+    form.locationCity?.trim() ||
+    form.locationZone.split(',').pop()?.trim() ||
+    form.locationZone.trim();
+  const id = resolveZoneIdByCityName(cityCandidate, zones);
+  return id ? zones.find((z) => z.id === id) ?? null : null;
 }
 
 function buildMockSubmission(form: ReportForm): ReportSubmissionResult {
@@ -115,11 +132,22 @@ function buildReportFormFromFlow(input: {
   subjectName: string;
   subjectAge: string;
   subjectGender: string;
-  subjectZone: string;
+  subjectCity?: string;
+  subjectCityZoneId?: string | null;
+  subjectNeighborhood?: string;
+  subjectAddress?: string;
+  /** Legacy single free-text location; still accepted as fallback */
+  subjectZone?: string;
   subjectDate: string;
   subjectObs: string;
   photoPreview: string;
 }): ReportForm {
+  const composedZone =
+    [input.subjectAddress, input.subjectNeighborhood, input.subjectCity]
+      .map((p) => p?.trim())
+      .filter(Boolean)
+      .join(', ') || (input.subjectZone ?? '');
+
   return {
     itemType: input.itemType,
     reporterRole: input.reporterRole,
@@ -131,7 +159,11 @@ function buildReportFormFromFlow(input: {
     subjectName: input.subjectName,
     subjectAge: input.subjectAge,
     subjectGender: input.subjectGender,
-    locationZone: input.subjectZone,
+    locationZone: composedZone,
+    locationCity: input.subjectCity,
+    locationCityZoneId: input.subjectCityZoneId ?? null,
+    locationNeighborhood: input.subjectNeighborhood,
+    locationAddress: input.subjectAddress,
     eventDate: input.subjectDate,
     observations: input.subjectObs,
     photoUrl: input.photoPreview,
@@ -147,8 +179,22 @@ export const reportService = {
     }
 
     try {
-      console.log('[REPORT FLOW] step 1: Zone resolution');
-      const zoneId = await resolveZoneId(form.locationZone);
+      console.log('[REPORT FLOW] step 1: Zone + location resolution');
+      const cityZone = await resolveCityZone(form);
+      const zoneId = cityZone?.id ?? null;
+
+      // Best-effort geocoding of the specific address; fall back to the city
+      // coordinates so the map always has at least a city-level point.
+      const geo = await geocodeAddress({
+        address: form.locationAddress,
+        neighborhood: form.locationNeighborhood,
+        city: form.locationCity,
+      });
+      const latitude = geo?.latitude ?? cityZone?.latitude ?? null;
+      const longitude = geo?.longitude ?? cityZone?.longitude ?? null;
+      const addressText = form.locationAddress?.trim() || form.locationZone || null;
+      const placeName = form.locationNeighborhood?.trim() || null;
+
       const reportType = itemTypeToReportType(form.itemType);
       const approximateAge = parseApproximateAge(form.subjectAge);
       const lastSeenAt = form.eventDate
@@ -179,6 +225,11 @@ export const reportService = {
         p_last_seen_at: lastSeenAt,
         p_zone_id: zoneId,
         p_pet_species: form.itemType === 'mascota' ? 'Mascota' : null,
+        p_photo_url: form.photoUrl || null,
+        p_latitude: latitude,
+        p_longitude: longitude,
+        p_address: addressText,
+        p_place_name: placeName,
       });
 
       if (rpcError) {

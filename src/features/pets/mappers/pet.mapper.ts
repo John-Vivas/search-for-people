@@ -22,6 +22,7 @@ export interface PetMappableRow {
   current_location_id: string | null;
   last_seen_location_id: string | null;
   description?: string | null;
+  primary_photo_url?: string | null;
 }
 
 const PLACEHOLDER_PHOTO =
@@ -140,6 +141,12 @@ export function mapPetToItem(
     .filter(Boolean)
     .join(' • ');
 
+  const locId = row.last_seen_location_id ?? row.current_location_id;
+  const hasKnownLocation = Boolean(
+    (locId && ctx.locationsById.has(locId)) ||
+      (zone?.latitude != null && zone?.longitude != null)
+  );
+
   return {
     id: row.id,
     code: resolveCode(row),
@@ -147,10 +154,11 @@ export function mapPetToItem(
     name: resolveDisplayName(row),
     age: formatAge(row.approximate_age),
     gender: mapSex(row.sex),
-    photo: PLACEHOLDER_PHOTO,
+    photo: row.primary_photo_url?.trim() ? row.primary_photo_url : PLACEHOLDER_PHOTO,
     location: resolveLocationText(row, ctx),
     city: resolveCity(zone),
     coordinates: resolveCoordinates(row, ctx),
+    hasKnownLocation,
     updatedAt: formatRelativeUpdatedAt(row.updated_at),
     lastSeenDate: formatDisplayDate(row.last_seen_at ?? row.updated_at),
     verified: row.is_verified,
