@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useAidRequests } from '@/src/features/aid/hooks/useAidRequests';
 import { aidRequestsService } from '@/src/features/aid/services/aidRequests.service';
 import { AidRequestCard } from '@/src/features/aid/components/AidRequestCard';
@@ -50,12 +50,20 @@ export const AidBoardView: React.FC = () => {
     refetch();
   };
 
-  const advance = async (req: AidRequest, status: 'EN_ROUTE' | 'DELIVERED') => {
-    setBusyId(req.id);
-    await aidRequestsService.advance(req.id, status);
-    setBusyId(null);
-    refetch();
-  };
+  const advance = useCallback(
+    async (req: AidRequest, status: 'EN_ROUTE' | 'DELIVERED') => {
+      setBusyId(req.id);
+      await aidRequestsService.advance(req.id, status);
+      setBusyId(null);
+      refetch();
+    },
+    [refetch]
+  );
+
+  // Stable handlers so memoized AidRequestCard doesn't re-render every tick.
+  const handleCommit = useCallback((r: AidRequest) => setCommitting(r), []);
+  const handleEnRoute = useCallback((r: AidRequest) => advance(r, 'EN_ROUTE'), [advance]);
+  const handleDelivered = useCallback((r: AidRequest) => advance(r, 'DELIVERED'), [advance]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
@@ -117,9 +125,9 @@ export const AidBoardView: React.FC = () => {
               key={req.id}
               request={req}
               busy={busyId === req.id}
-              onCommit={(r) => setCommitting(r)}
-              onMarkEnRoute={(r) => advance(r, 'EN_ROUTE')}
-              onMarkDelivered={(r) => advance(r, 'DELIVERED')}
+              onCommit={handleCommit}
+              onMarkEnRoute={handleEnRoute}
+              onMarkDelivered={handleDelivered}
             />
           ))}
         </div>

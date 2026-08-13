@@ -8,7 +8,7 @@ interface PersonCardProps {
   layout?: 'grid' | 'horizontal';
 }
 
-export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'grid' }) => {
+const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'grid' }) => {
   const [copied, setCopied] = useState(false);
 
   const handleShare = (e: React.MouseEvent) => {
@@ -183,3 +183,6 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
     </article>
   );
 };
+
+/** Memoized: list cards only re-render when their own item/handlers change. */
+export const PersonCard = React.memo(PersonCardBase);

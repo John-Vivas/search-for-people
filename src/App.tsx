@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { PersonItem } from '@/src/types';
 import type { AdminReportItem } from '@/src/features/reports/types/report';
 import { TopAppBar } from '@/src/components/TopAppBar';
@@ -12,17 +12,31 @@ import {
   ListLoadingState,
 } from '@/src/components/common/AsyncListState';
 
+// Eagerly loaded: the common, lightweight list views (no heavy deps).
 import { HomeView } from '@/src/views/HomeView';
 import { SearchView } from '@/src/views/SearchView';
 import { EncontradosView } from '@/src/views/EncontradosView';
 import { DesaparecidosView } from '@/src/views/DesaparecidosView';
 import { NNView } from '@/src/views/NNView';
-import { PersonDetailView } from '@/src/views/PersonDetailView';
-import { MapView } from '@/src/views/MapView';
-import { ReportFlowView } from '@/src/views/ReportFlowView';
-import { AidBoardView } from '@/src/views/AidBoardView';
-import { AdminOverviewView } from '@/src/views/AdminOverviewView';
-import { AdminReportDetailView } from '@/src/views/AdminReportDetailView';
+
+// Lazily loaded: heavier / less-frequent views. The detail + map views pull in
+// Leaflet, so deferring them keeps the initial bundle small.
+const PersonDetailView = lazy(() =>
+  import('@/src/views/PersonDetailView').then((m) => ({ default: m.PersonDetailView }))
+);
+const MapView = lazy(() => import('@/src/views/MapView').then((m) => ({ default: m.MapView })));
+const ReportFlowView = lazy(() =>
+  import('@/src/views/ReportFlowView').then((m) => ({ default: m.ReportFlowView }))
+);
+const AidBoardView = lazy(() =>
+  import('@/src/views/AidBoardView').then((m) => ({ default: m.AidBoardView }))
+);
+const AdminOverviewView = lazy(() =>
+  import('@/src/views/AdminOverviewView').then((m) => ({ default: m.AdminOverviewView }))
+);
+const AdminReportDetailView = lazy(() =>
+  import('@/src/views/AdminReportDetailView').then((m) => ({ default: m.AdminReportDetailView }))
+);
 
 const PERSON_TABS = new Set([
   'home',
@@ -139,6 +153,7 @@ export function App() {
       />
 
       <main className="flex-1 mt-[64px] md:mt-[72px]">
+        <Suspense fallback={<ListLoadingState message="Cargando…" />}>
         {currentTab === 'home' &&
           renderPersonContent(
             <HomeView
@@ -234,6 +249,7 @@ export function App() {
               />
             )
           )}
+        </Suspense>
       </main>
 
       {currentTab !== 'mapa' && (

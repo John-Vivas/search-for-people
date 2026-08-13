@@ -37,7 +37,7 @@ function Badge({ bg, text, children }: { bg: string; text: string; children: Rea
   );
 }
 
-export const AidRequestCard: React.FC<AidRequestCardProps> = ({
+const AidRequestCardBase: React.FC<AidRequestCardProps> = ({
   request,
   busy = false,
   onCommit,
@@ -149,3 +149,6 @@ export const AidRequestCard: React.FC<AidRequestCardProps> = ({
     </article>
   );
 };
+
+/** Memoized: a card re-renders only when its request/handlers change. */
+export const AidRequestCard = React.memo(AidRequestCardBase);
