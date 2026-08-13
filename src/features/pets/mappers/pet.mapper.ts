@@ -22,6 +22,7 @@ export interface PetMappableRow {
   current_location_id: string | null;
   last_seen_location_id: string | null;
   description?: string | null;
+  primary_photo_url?: string | null;
 }
 
 const PLACEHOLDER_PHOTO =
@@ -147,7 +148,7 @@ export function mapPetToItem(
     name: resolveDisplayName(row),
     age: formatAge(row.approximate_age),
     gender: mapSex(row.sex),
-    photo: PLACEHOLDER_PHOTO,
+    photo: row.primary_photo_url?.trim() ? row.primary_photo_url : PLACEHOLDER_PHOTO,
     location: resolveLocationText(row, ctx),
     city: resolveCity(zone),
     coordinates: resolveCoordinates(row, ctx),

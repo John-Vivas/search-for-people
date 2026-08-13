@@ -62,9 +62,11 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
     e.preventDefault();
 
     try {
+      // Only persist a real uploaded Cloudinary URL. A local blob: preview
+      // (upload not finished) or an empty value is stored as '' so the UI
+      // shows the "Sin foto" fallback instead of a broken/placeholder image.
       const finalPhotoUrl =
-        primaryUrl ||
-        'https://placehold.co/400x400/e1e3e4/6d7a77?text=Sin+foto';
+        primaryUrl && primaryUrl.startsWith('http') ? primaryUrl : '';
 
       const form = reportService.buildReportFormFromFlow({
         itemType,

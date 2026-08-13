@@ -179,6 +179,7 @@ export const reportService = {
         p_last_seen_at: lastSeenAt,
         p_zone_id: zoneId,
         p_pet_species: form.itemType === 'mascota' ? 'Mascota' : null,
+        p_photo_url: form.photoUrl || null,
       });
 
       if (rpcError) {

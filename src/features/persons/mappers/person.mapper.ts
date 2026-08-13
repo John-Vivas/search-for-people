@@ -44,6 +44,7 @@ export interface PersonMappableRow {
   physical_description?: string | null;
   clothing_description?: string | null;
   distinguishing_features?: string | null;
+  primary_photo_url?: string | null;
 }
 
 const PLACEHOLDER_PHOTO =
@@ -183,7 +184,7 @@ export function mapPersonToItem(
     name: resolveDisplayName(row),
     age: formatAge(row.approximate_age, row.age_is_approximate),
     gender: row.sex ?? undefined,
-    photo: PLACEHOLDER_PHOTO,
+    photo: row.primary_photo_url?.trim() ? row.primary_photo_url : PLACEHOLDER_PHOTO,
     location: resolveLocationText(row, ctx),
     city: resolveCity(zone),
     coordinates: resolveCoordinates(row, ctx),
