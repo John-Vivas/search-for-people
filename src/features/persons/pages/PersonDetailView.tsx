@@ -1,5 +1,6 @@
 import React from 'react';
 import { PersonItem } from '@/src/features/persons/types/person';
+import { PersonLocationMap } from '@/src/features/persons/components/PersonLocationMap';
 
 interface PersonDetailViewProps {
   item: PersonItem;
@@ -110,18 +111,19 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
           </div>
           <p className="text-base font-bold text-[#191c1d]">{item.location}, {item.city}</p>
 
-          <div className="w-full h-32 bg-[#e7e8e9] rounded-xl overflow-hidden relative mt-2 border border-[#bcc9c6]/40 flex items-center justify-center">
-            {/* Map Preview Snippet */}
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-90"
-              style={{
-                backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCeOnxHJRsn50r51p1M-IiqRlCfMVbGldYoAJ6CjNekeWvCHayD1LRRJHudc6cdKB9q2s_MgX5MU2RuFx01kXJKg4xJMAjZTxOfRClHIVzSDhoEa2BSssiH2YZZTAhEGHTWR7s2Ad-NJf17SpXzqMTKsaMfsLOKN0kUUBybz5Vl54fIt_HNlVSirbyxDcMBhCtwTJch8CToWaidx2ei5MFVGzKgjvLHcU9VoZGrTT8qNFlZfjDFPLkPBw')`,
-              }}
-            />
-            <div className="relative z-10 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-xs font-bold text-[#00685d]">
-              <span className="material-symbols-outlined text-[16px]">pin_drop</span>
-              Ver en mapa interactivo
-            </div>
+          <div className="w-full h-40 bg-[#e7e8e9] rounded-xl overflow-hidden relative mt-2 border border-[#bcc9c6]/40">
+            {item.hasKnownLocation ? (
+              <PersonLocationMap
+                coordinates={item.coordinates}
+                label={`${item.name} — ${item.location}`}
+                markerColor={item.type === 'encontrado' ? '#00685d' : item.type === 'nn' ? '#8e711f' : '#ba1a1a'}
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#6d7a77]">
+                <span className="material-symbols-outlined text-[28px]">location_off</span>
+                <span className="text-xs font-medium">Ubicación no disponible en el mapa</span>
+              </div>
+            )}
           </div>
         </div>
 

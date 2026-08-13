@@ -141,6 +141,12 @@ export function mapPetToItem(
     .filter(Boolean)
     .join(' • ');
 
+  const locId = row.last_seen_location_id ?? row.current_location_id;
+  const hasKnownLocation = Boolean(
+    (locId && ctx.locationsById.has(locId)) ||
+      (zone?.latitude != null && zone?.longitude != null)
+  );
+
   return {
     id: row.id,
     code: resolveCode(row),
@@ -152,6 +158,7 @@ export function mapPetToItem(
     location: resolveLocationText(row, ctx),
     city: resolveCity(zone),
     coordinates: resolveCoordinates(row, ctx),
+    hasKnownLocation,
     updatedAt: formatRelativeUpdatedAt(row.updated_at),
     lastSeenDate: formatDisplayDate(row.last_seen_at ?? row.updated_at),
     verified: row.is_verified,
