@@ -715,19 +715,24 @@ http://localhost:3000
 
 ## Configuración local
 
-1. Configura `.env` con las variables públicas de tu proyecto Supabase:
+1. Configura `.env.local` con las variables públicas de tu proyecto Supabase (ver `.env.example`):
 
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu_anon_key
 ```
 
-2. Ejecuta el esquema SQL desde `src/db/codeTable.sql` en tu proyecto Supabase (si aún no está aplicado).
-3. **Fase 4 — Zonas jerárquicas:** ejecuta `supabase/apply_phase4_manual.sql` en el SQL Editor de Supabase (Colombia → Chocó → Quibdó, etc.).
-4. **Fase 5 — Personas de ejemplo:** ejecuta `supabase/migrations/20250812130000_seed_persons.sql` (datos ficticios + policies de lectura).
-5. **Fase 6 — Mascotas de ejemplo:** ejecuta `supabase/migrations/20250812140000_seed_pets.sql`.
-6. **Fase 7 — Reportes (RLS + RPC):** ejecuta `supabase/migrations/20250812150000_reports_rls_and_rpc.sql`.
-7. Inicia la app con `npm run dev`.
+2. Vincula el CLI a tu proyecto y aplica todas las migraciones (incluye el esquema base, zonas jerárquicas, seeds de personas/mascotas y RLS/RPC de reportes):
+
+```bash
+npx supabase login
+npx supabase link --project-ref tu-proyecto-ref
+npx supabase db push
+```
+
+3. Inicia la app con `npm run dev`.
+
+> Las migraciones viven en `supabase/migrations/` y se aplican en orden por nombre de archivo — no ejecutes SQL suelto manualmente en el SQL Editor salvo para depurar puntualmente.
 
 > **Importante:** Nunca uses `SUPABASE_SERVICE_ROLE_KEY` en el frontend. La seguridad real depende de **RLS** en PostgreSQL.
 

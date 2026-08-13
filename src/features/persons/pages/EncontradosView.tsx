@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { PersonItem } from '../types/person';
-import { ListEmptyState } from '../../../components/common/AsyncListState';
+import { PersonItem } from '@/src/features/persons/types/person';
+import { ListEmptyState } from '@/src/components/common/AsyncListState';
 
 interface EncontradosViewProps {
   items: PersonItem[];

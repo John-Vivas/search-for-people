@@ -1,8 +1,8 @@
 import React from 'react';
-import { MapView } from '../components/MapView';
-import { useMapData } from '../hooks/useMapData';
-import { useMapFilters } from '../hooks/useMapFilters';
-import { MapLocation } from '../types/map.types';
+import { MapView } from '@/src/features/map/components/MapView';
+import { useMapData } from '@/src/features/map/hooks/useMapData';
+import { useMapFilters } from '@/src/features/map/hooks/useMapFilters';
+import { MapLocation } from '@/src/features/map/types/map.types';
 
 interface MapPageProps {
   onViewLocationDetail?: (location: MapLocation) => void;

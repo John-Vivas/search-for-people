@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { PersonItem } from '../types/person';
-import { PersonCard } from '../components/PersonCard';
+import { PersonItem } from '@/src/features/persons/types/person';
+import { PersonCard } from '@/src/features/persons/components/PersonCard';
 
 interface SearchViewProps {
   items: PersonItem[];

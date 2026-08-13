@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PersonItem } from '../../persons/types/person';
+import { PersonItem } from '@/src/features/persons/types/person';
 
 interface SightingModalProps {
   item: PersonItem | null;

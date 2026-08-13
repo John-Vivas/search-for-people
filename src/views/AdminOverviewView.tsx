@@ -1,1 +1,1 @@
-export * from '../features/admin/pages/AdminOverviewView';
+export * from '@/src/features/admin/pages/AdminOverviewView';

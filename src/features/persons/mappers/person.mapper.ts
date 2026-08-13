@@ -1,5 +1,5 @@
-import type { PersonStatus } from '../types/person.db';
-import type { ItemType, PersonItem } from '../types/person';
+import type { PersonStatus } from '@/src/features/persons/types/person.db';
+import type { ItemType, PersonItem } from '@/src/features/persons/types/person';
 
 /** Context for mapping DB rows → UI PersonItem (zones + optional locations) */
 export interface ZoneInfo {

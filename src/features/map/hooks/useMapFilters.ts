@@ -4,16 +4,16 @@ import {
   MapLocation,
   EmergencyZone,
   ZoneStats,
-} from '../types/map.types';
-import { filterMapLocations } from '../services/mapService';
+} from '@/src/features/map/types/map.types';
+import { filterMapLocations } from '@/src/features/map/services/mapService';
 import {
   computeStatsForZoneIds,
   getCitiesForDepartment,
   getDescendantZoneIds,
   getMapDisplayZones,
   getDepartmentZones,
-} from '../utils/zoneTree';
-import { isDepartmentZone } from '../../../types/emergency-zone';
+} from '@/src/features/map/utils/zoneTree';
+import { isDepartmentZone } from '@/src/types/emergency-zone';
 
 const DEFAULT_FILTERS: MapFilter = {
   type: 'ALL',

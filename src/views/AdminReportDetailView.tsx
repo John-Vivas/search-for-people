@@ -1,1 +1,1 @@
-export * from '../features/admin/pages/AdminReportDetailView';
+export * from '@/src/features/admin/pages/AdminReportDetailView';

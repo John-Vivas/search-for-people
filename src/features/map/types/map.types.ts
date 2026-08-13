@@ -4,10 +4,10 @@ export type PersonMapStatus = 'MISSING' | 'FOUND' | 'UNIDENTIFIED';
 
 export type FacilityType = 'HOSPITAL' | 'MEDICAL_CENTER' | 'SHELTER' | 'OTHER';
 
-export type { ZoneType, EmergencyZoneNode } from '../../../types/emergency-zone';
+export type { ZoneType, EmergencyZoneNode } from '@/src/types/emergency-zone';
 
 /** Nodo geográfico usado en mapa y filtros */
-export type EmergencyZone = import('../../../types/emergency-zone').EmergencyZoneNode;
+export type EmergencyZone = import('@/src/types/emergency-zone').EmergencyZoneNode;
 
 export interface MapFilter {
   type: 'ALL' | 'PERSON' | 'PET' | 'FACILITY';
@@ -84,7 +84,7 @@ export interface MapCluster {
 export interface ZoneStats {
   zoneId: string;
   zoneName: string;
-  zoneType: import('../../../types/emergency-zone').ZoneType;
+  zoneType: import('@/src/types/emergency-zone').ZoneType;
   department: string;
   parentId?: string | null;
   total: number;

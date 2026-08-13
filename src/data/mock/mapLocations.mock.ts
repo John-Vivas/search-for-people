@@ -1,4 +1,4 @@
-import { MapLocation } from '../../features/map/types/map.types';
+import { MapLocation } from '@/src/features/map/types/map.types';
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
 const daysAgo = (d: number) => new Date(Date.now() - d * 86400000).toISOString();

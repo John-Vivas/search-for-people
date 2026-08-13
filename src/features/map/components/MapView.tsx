@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import { MapViewProps } from '../types/map.types';
-import { MapCanvas } from './MapCanvas';
-import { MapFilters } from './MapFilters';
-import { MapLegend } from './MapLegend';
-import { ZoneDetails } from './ZoneDetails';
-import { LocationPopup } from './LocationPopup';
-import { LocationList } from './LocationList';
-import { getCitiesForDepartment, getDepartmentZones } from '../utils/zoneTree';
-import { isDepartmentZone } from '../../../types/emergency-zone';
+import { MapViewProps } from '@/src/features/map/types/map.types';
+import { MapCanvas } from '@/src/features/map/components/MapCanvas';
+import { MapFilters } from '@/src/features/map/components/MapFilters';
+import { MapLegend } from '@/src/features/map/components/MapLegend';
+import { ZoneDetails } from '@/src/features/map/components/ZoneDetails';
+import { LocationPopup } from '@/src/features/map/components/LocationPopup';
+import { LocationList } from '@/src/features/map/components/LocationList';
+import { getCitiesForDepartment, getDepartmentZones } from '@/src/features/map/utils/zoneTree';
+import { isDepartmentZone } from '@/src/types/emergency-zone';
 
 export const MapView: React.FC<MapViewProps> = ({
   locations,

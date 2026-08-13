@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import { PersonItem } from './types';
-import type { AdminReportItem } from './features/reports/types/report';
-import { TopAppBar } from './components/TopAppBar';
-import { BottomNavBar } from './components/BottomNavBar';
-import { SightingModal } from './components/SightingModal';
-import { usePersons } from './features/persons/hooks/usePersons';
-import { useAdminReports } from './features/admin/hooks/useAdminReports';
-import type { ReportSubmissionResult } from './features/reports/services/reportService';
+import { PersonItem } from '@/src/types';
+import type { AdminReportItem } from '@/src/features/reports/types/report';
+import { TopAppBar } from '@/src/components/TopAppBar';
+import { BottomNavBar } from '@/src/components/BottomNavBar';
+import { SightingModal } from '@/src/components/SightingModal';
+import { usePersons } from '@/src/features/persons/hooks/usePersons';
+import { useAdminReports } from '@/src/features/admin/hooks/useAdminReports';
+import type { ReportSubmissionResult } from '@/src/features/reports/services/reportService';
 import {
   ListErrorState,
   ListLoadingState,
-} from './components/common/AsyncListState';
+} from '@/src/components/common/AsyncListState';
 
-import { HomeView } from './views/HomeView';
-import { SearchView } from './views/SearchView';
-import { EncontradosView } from './views/EncontradosView';
-import { DesaparecidosView } from './views/DesaparecidosView';
-import { NNView } from './views/NNView';
-import { PersonDetailView } from './views/PersonDetailView';
-import { MapView } from './views/MapView';
-import type { MapLocation } from './features/map/types/map.types';
-import { ReportFlowView } from './views/ReportFlowView';
-import { AdminOverviewView } from './views/AdminOverviewView';
-import { AdminReportDetailView } from './views/AdminReportDetailView';
+import { HomeView } from '@/src/views/HomeView';
+import { SearchView } from '@/src/views/SearchView';
+import { EncontradosView } from '@/src/views/EncontradosView';
+import { DesaparecidosView } from '@/src/views/DesaparecidosView';
+import { NNView } from '@/src/views/NNView';
+import { PersonDetailView } from '@/src/views/PersonDetailView';
+import { MapView } from '@/src/views/MapView';
+import type { MapLocation } from '@/src/features/map/types/map.types';
+import { ReportFlowView } from '@/src/views/ReportFlowView';
+import { AdminOverviewView } from '@/src/views/AdminOverviewView';
+import { AdminReportDetailView } from '@/src/views/AdminReportDetailView';
 
 const PERSON_TABS = new Set([
   'home',

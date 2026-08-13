@@ -1,18 +1,18 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
 import {
   PERSON_PUBLIC_COLUMNS,
   PERSON_DETAIL_COLUMNS,
   DEFAULT_PAGE_SIZE,
-} from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
+} from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import type {
   PersonPublic,
   PersonInsert,
   PersonSearchFilters,
   PersonStatus,
   PersonUpdate,
-} from '../types/person.db';
+} from '@/src/features/persons/types/person.db';
 
 /** Person row with optional detail fields for UI mapping */
 export type PersonRecord = PersonPublic & {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ItemType } from '../../persons/types/person';
-import { ReporterRole } from '../types/reporter';
-import { useReports } from '../hooks/useReports';
-import { reportService, type ReportSubmissionResult } from '../services/reportService';
-import { useImageUpload } from '../../../hooks/useImageUpload';
-import { ImageUploader } from '../../../components/ui/ImageUploader';
+import { ItemType } from '@/src/features/persons/types/person';
+import { ReporterRole } from '@/src/features/reports/types/reporter';
+import { useReports } from '@/src/features/reports/hooks/useReports';
+import { reportService, type ReportSubmissionResult } from '@/src/features/reports/services/reportService';
+import { useImageUpload } from '@/src/hooks/useImageUpload';
+import { ImageUploader } from '@/src/components/ui/ImageUploader';
 
 interface ReportFlowViewProps {
   onReportSubmitted: (result: ReportSubmissionResult) => void;

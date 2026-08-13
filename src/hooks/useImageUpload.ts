@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import {
   compressImage,
   uploadToCloudinary,
-} from '../services/cloudinary/cloudinary.service';
-import type { ProcessedUploadItem } from '../services/cloudinary/cloudinary.types';
+} from '@/src/services/cloudinary/cloudinary.service';
+import type { ProcessedUploadItem } from '@/src/services/cloudinary/cloudinary.types';
 
 const MAX_IMAGES_LIMIT = 3;
 const MAX_INITIAL_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB

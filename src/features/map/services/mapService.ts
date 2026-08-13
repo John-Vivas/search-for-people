@@ -4,14 +4,14 @@ import {
   MapLocation,
   PersonMapStatus,
   MapLocationType,
-} from '../types/map.types';
-import { EMERGENCY_ZONE_TREE } from '../../../data/mock/emergencyZones';
-import { MOCK_MAP_LOCATIONS } from '../../../data/mock/mapLocations.mock';
-import { isMockMode } from '../../../lib/dataSource';
-import { mockApiCall, ok, fail, ServiceResponse } from '../../../services/api/errors';
-import { zonesService } from './zones.service';
-import { locationMatchesZoneFilter } from '../utils/zoneTree';
-import { resolveZoneId as mapLegacyZoneId } from '../utils/zoneMappers';
+} from '@/src/features/map/types/map.types';
+import { EMERGENCY_ZONE_TREE } from '@/src/data/mock/emergencyZones';
+import { MOCK_MAP_LOCATIONS } from '@/src/data/mock/mapLocations.mock';
+import { isMockMode } from '@/src/lib/dataSource';
+import { mockApiCall, ok, fail, ServiceResponse } from '@/src/services/api/errors';
+import { zonesService } from '@/src/features/map/services/zones.service';
+import { locationMatchesZoneFilter } from '@/src/features/map/utils/zoneTree';
+import { resolveZoneId as mapLegacyZoneId } from '@/src/features/map/utils/zoneMappers';
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 

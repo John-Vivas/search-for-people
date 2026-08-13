@@ -1,11 +1,11 @@
-import { zonesService } from '../features/map/services/zones.service';
-import { locationsService } from '../features/map/services/locations.service';
+import { zonesService } from '@/src/features/map/services/zones.service';
+import { locationsService } from '@/src/features/map/services/locations.service';
 import {
   buildEnrichmentContext,
   zonePublicToInfo,
   type LocationInfo,
   type PersonEnrichmentContext,
-} from '../features/persons/mappers/person.mapper';
+} from '@/src/features/persons/mappers/person.mapper';
 
 /** Shared zone/location lookup for persons and pets mappers */
 export async function loadEnrichmentContext(): Promise<PersonEnrichmentContext> {

@@ -1,4 +1,4 @@
-import { AdminReportItem } from '../../features/reports/types/report';
+import { AdminReportItem } from '@/src/features/reports/types/report';
 
 export const INITIAL_ADMIN_REPORTS: AdminReportItem[] = [
   {

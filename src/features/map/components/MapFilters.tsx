@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { MapFilter, EmergencyZone } from '../types/map.types';
-import { getCitiesForDepartment, getDepartmentZones } from '../utils/zoneTree';
+import { MapFilter, EmergencyZone } from '@/src/features/map/types/map.types';
+import { getCitiesForDepartment, getDepartmentZones } from '@/src/features/map/utils/zoneTree';
 
 interface MapFiltersProps {
   filters: MapFilter;

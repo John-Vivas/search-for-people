@@ -1,1 +1,1 @@
-export * from '../features/persons/components/PersonCard';
+export * from '@/src/features/persons/components/PersonCard';

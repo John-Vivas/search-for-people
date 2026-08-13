@@ -1,5 +1,5 @@
-import { isSupabaseConfigured } from './supabase';
-import type { DataSourceMode } from './constants';
+import { isSupabaseConfigured } from '@/src/lib/supabase';
+import type { DataSourceMode } from '@/src/lib/constants';
 
 /** Returns active data source based on env configuration */
 export function getDataSource(): DataSourceMode {

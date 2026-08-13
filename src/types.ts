@@ -1,9 +1,9 @@
 // Re-export modular types for root backwards compatibility
-export * from './features/persons/types/person';
-export * from './features/reports/types/reporter';
-export * from './features/reports/types/report';
-export * from './features/pets/types/pet';
-export * from './features/admin/types/admin';
+export * from '@/src/features/persons/types/person';
+export * from '@/src/features/reports/types/reporter';
+export * from '@/src/features/reports/types/report';
+export * from '@/src/features/pets/types/pet';
+export * from '@/src/features/admin/types/admin';
 
 // Supabase / database domain types (Phase 1+)
 export type {
@@ -16,7 +16,7 @@ export type {
   FacilityType,
   PersonEventType,
   MediaType,
-} from './types/enums';
+} from '@/src/types/enums';
 
 export type {
   OrganizationRow,
@@ -32,4 +32,4 @@ export type {
   ReportMediaRow,
   OrganizationMemberRow,
   Database,
-} from './types/database';
+} from '@/src/types/database';

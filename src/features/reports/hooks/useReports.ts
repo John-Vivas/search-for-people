@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { ReportForm, SightingReport } from '../types/report';
+import { ReportForm, SightingReport } from '@/src/features/reports/types/report';
 import {
   reportService,
   type ReportSubmissionResult,
-} from '../services/reportService';
+} from '@/src/features/reports/services/reportService';
 
 export function useReports() {
   const [submitting, setSubmitting] = useState(false);

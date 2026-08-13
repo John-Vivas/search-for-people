@@ -1,9 +1,9 @@
-import { AdminReportItem } from '../../reports/types/report';
-import { INITIAL_ADMIN_REPORTS } from '../../../data/mock/mockAdminReports';
-import { isMockMode } from '../../../lib/dataSource';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import { reportsService } from '../../reports/services/reports.service';
-import { reportService } from '../../reports/services/reportService';
+import { AdminReportItem } from '@/src/features/reports/types/report';
+import { INITIAL_ADMIN_REPORTS } from '@/src/data/mock/mockAdminReports';
+import { isMockMode } from '@/src/lib/dataSource';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import { reportsService } from '@/src/features/reports/services/reports.service';
+import { reportService } from '@/src/features/reports/services/reportService';
 
 export const adminService = {
   async getAdminReports(): Promise<ServiceResponse<AdminReportItem[]>> {

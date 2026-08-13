@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { EmergencyZone, MapLocation } from '../types/map.types';
-import { mapService } from '../services/mapService';
+import { EmergencyZone, MapLocation } from '@/src/features/map/types/map.types';
+import { mapService } from '@/src/features/map/services/mapService';
 
 export function useMapData() {
   const [zones, setZones] = useState<EmergencyZone[]>([]);

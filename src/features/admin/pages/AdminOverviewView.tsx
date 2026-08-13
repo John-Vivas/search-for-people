@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AdminReportItem } from '../types/admin';
+import { AdminReportItem } from '@/src/features/admin/types/admin';
 
 interface AdminOverviewViewProps {
   adminReports: AdminReportItem[];

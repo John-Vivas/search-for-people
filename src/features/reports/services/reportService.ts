@@ -1,14 +1,15 @@
-import { ReportForm, AdminReportItem, SightingReport } from '../types/report';
-import { PersonItem, ItemType } from '../../persons/types/person';
-import { mapRoleUIToType } from '../types/reporter';
-import { generateCode } from '../../../lib/utils';
-import { isMockMode } from '../../../lib/dataSource';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import { reportersService } from './reporters.service';
-import { reportsService } from './reports.service';
-import { personsService } from '../../persons/services/persons.service';
-import { petsService } from '../../pets/services/pets.service';
-import { zonesService } from '../../map/services/zones.service';
+import { ReportForm, AdminReportItem, SightingReport } from '@/src/features/reports/types/report';
+import { PersonItem, ItemType } from '@/src/features/persons/types/person';
+import { mapRoleUIToType } from '@/src/features/reports/types/reporter';
+import { generateCode } from '@/src/lib/utils';
+import { isMockMode } from '@/src/lib/dataSource';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import { reportersService } from '@/src/features/reports/services/reporters.service';
+import { reportsService } from '@/src/features/reports/services/reports.service';
+import { personsService } from '@/src/features/persons/services/persons.service';
+import { petsService } from '@/src/features/pets/services/pets.service';
+import { zonesService } from '@/src/features/map/services/zones.service';
 import {
   adminStatusToReportStatus,
   itemTypeToPersonStatus,
@@ -16,11 +17,11 @@ import {
   itemTypeToReportType,
   mapAdminQueueRowToAdminReportItem,
   type AdminReportQueueRow,
-} from '../mappers/report.mapper';
+} from '@/src/features/reports/mappers/report.mapper';
 import {
   resolveZoneIdByCityName,
   zonePublicToInfo,
-} from '../../persons/mappers/person.mapper';
+} from '@/src/features/persons/mappers/person.mapper';
 
 export interface ReportSubmissionResult {
   adminReport: AdminReportItem;

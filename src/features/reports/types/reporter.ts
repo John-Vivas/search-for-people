@@ -1,4 +1,4 @@
-export type ReporterType = import('../../../types/enums').ReporterType;
+export type ReporterType = import('@/src/types/enums').ReporterType;
 
 export type ReporterRoleUI = 'familiar' | 'testigo' | 'voluntario' | 'otra_persona';
 export type ReporterRole = ReporterRoleUI;

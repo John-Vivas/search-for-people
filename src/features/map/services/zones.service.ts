@@ -1,15 +1,15 @@
-import { getSupabaseClient } from '../../../lib/supabase';
-import { isMockMode } from '../../../lib/dataSource';
+import { getSupabaseClient } from '@/src/lib/supabase';
+import { isMockMode } from '@/src/lib/dataSource';
 import {
   EMERGENCY_ZONE_COLUMNS_FLAT,
   EMERGENCY_ZONE_COLUMNS_HIERARCHICAL,
-} from '../../../lib/constants';
-import { ok, fail, mockApiCall, ServiceResponse } from '../../../services/api/errors';
-import { EMERGENCY_ZONE_TREE } from '../../../data/mock/emergencyZones';
-import type { EmergencyZoneNode } from '../../../types/emergency-zone';
-import { isCityLevelZone, isDepartmentZone } from '../../../types/emergency-zone';
-import type { EmergencyZone, EmergencyZonePublic } from '../types/zone.db';
-import { isPostgrestMissingColumnError } from '../../../lib/postgrestErrors';
+} from '@/src/lib/constants';
+import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
+import { EMERGENCY_ZONE_TREE } from '@/src/data/mock/emergencyZones';
+import type { EmergencyZoneNode } from '@/src/types/emergency-zone';
+import { isCityLevelZone, isDepartmentZone } from '@/src/types/emergency-zone';
+import type { EmergencyZone, EmergencyZonePublic } from '@/src/features/map/types/zone.db';
+import { isPostgrestMissingColumnError } from '@/src/lib/postgrestErrors';
 import {
   buildCodeToIdMap,
   dbRowToPublic,
@@ -17,7 +17,7 @@ import {
   hasHierarchicalSchema,
   rowsToZoneNodes,
   rowToZoneNode,
-} from '../utils/zoneMappers';
+} from '@/src/features/map/utils/zoneMappers';
 
 type ZoneSchemaMode = 'hierarchical' | 'flat';
 
@@ -135,7 +135,10 @@ async function fetchZoneRows(
 
 async function fetchZoneRowById(id: string): Promise<ServiceResponse<EmergencyZone | null>> {
   const supabase = getSupabaseClient();
-  const columns =
+  // Widened to `string` on purpose: this can be either of two different
+  // column literals, and supabase-js's select() type parser only accepts
+  // a single literal — a union produces a ParserError type, not a real row.
+  const columns: string =
     cachedZoneSchema === 'flat'
       ? EMERGENCY_ZONE_COLUMNS_FLAT
       : EMERGENCY_ZONE_COLUMNS_HIERARCHICAL;
@@ -148,11 +151,11 @@ async function fetchZoneRowById(id: string): Promise<ServiceResponse<EmergencyZo
 
   if (!error) {
     if (cachedZoneSchema === null && data) {
-      cachedZoneSchema = hasHierarchicalSchema([data as EmergencyZoneDbRow])
+      cachedZoneSchema = hasHierarchicalSchema([data as unknown as EmergencyZoneDbRow])
         ? 'hierarchical'
         : 'flat';
     }
-    return ok(data as EmergencyZone | null);
+    return ok(data as unknown as EmergencyZone | null);
   }
 
   if (isPostgrestMissingColumnError(error)) {
@@ -214,7 +217,9 @@ export const zonesService = {
 
     try {
       const supabase = getSupabaseClient();
-      const columns =
+      // Same reasoning as fetchZoneRowById: widen to `string` so
+      // select() doesn't try (and fail) to parse a union of literals.
+      const columns: string =
         cachedZoneSchema === 'flat'
           ? EMERGENCY_ZONE_COLUMNS_FLAT
           : EMERGENCY_ZONE_COLUMNS_HIERARCHICAL;
@@ -226,7 +231,7 @@ export const zonesService = {
         .maybeSingle();
 
       if (!error) {
-        return ok(data as EmergencyZone | null);
+        return ok(data as unknown as EmergencyZone | null);
       }
 
       if (isPostgrestMissingColumnError(error)) {

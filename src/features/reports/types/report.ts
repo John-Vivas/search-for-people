@@ -1,5 +1,5 @@
-import { ItemType } from '../../persons/types/person';
-import { ReporterRoleUI, ReporterType, ReporterInfo } from './reporter';
+import { ItemType } from '@/src/features/persons/types/person';
+import { ReporterRoleUI, ReporterType, ReporterInfo } from '@/src/features/reports/types/reporter';
 
 export interface ReportForm {
   itemType: ItemType;

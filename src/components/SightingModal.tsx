@@ -1,1 +1,1 @@
-export * from '../features/reports/components/SightingModal';
+export * from '@/src/features/reports/components/SightingModal';

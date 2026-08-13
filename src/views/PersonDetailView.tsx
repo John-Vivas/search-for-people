@@ -1,1 +1,1 @@
-export * from '../features/persons/pages/PersonDetailView';
+export * from '@/src/features/persons/pages/PersonDetailView';
