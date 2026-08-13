@@ -159,6 +159,7 @@ export function mapPetToItem(
     city: resolveCity(zone),
     coordinates: resolveCoordinates(row, ctx),
     hasKnownLocation,
+    petStatus: row.status,
     updatedAt: formatRelativeUpdatedAt(row.updated_at),
     lastSeenDate: formatDisplayDate(row.last_seen_at ?? row.updated_at),
     verified: row.is_verified,
