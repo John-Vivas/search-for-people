@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PersonItem } from '../types/person';
+import { OptimizedImage } from '../../../components/ui/OptimizedImage';
 
 interface PersonCardProps {
   item: PersonItem;
@@ -56,6 +57,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
     }
   };
 
+  const fallbackType = item.type === 'mascota' ? 'pet' : 'person';
+
   if (layout === 'horizontal') {
     return (
       <article
@@ -65,9 +68,12 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
         <div className="absolute top-3 left-3 z-10">{renderBadge()}</div>
 
         <div className="w-full sm:w-32 h-44 sm:h-36 shrink-0 rounded-lg overflow-hidden bg-[#e7e8e9] relative">
-          <img
+          <OptimizedImage
             src={item.photo}
             alt={item.name}
+            width={300}
+            height={300}
+            fallbackType={fallbackType}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>
@@ -123,9 +129,12 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
       <div className="absolute top-3 right-3 z-10 flex gap-2">{renderBadge()}</div>
 
       <div className="h-52 relative overflow-hidden bg-[#e7e8e9]">
-        <img
+        <OptimizedImage
           src={item.photo}
           alt={item.name}
+          width={400}
+          height={300}
+          fallbackType={fallbackType}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>

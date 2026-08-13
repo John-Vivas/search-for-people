@@ -3,6 +3,8 @@ import { ItemType } from '../../persons/types/person';
 import { ReporterRole } from '../types/reporter';
 import { useReports } from '../hooks/useReports';
 import { reportService, type ReportSubmissionResult } from '../services/reportService';
+import { useImageUpload } from '../../../hooks/useImageUpload';
+import { ImageUploader } from '../../../components/ui/ImageUploader';
 
 interface ReportFlowViewProps {
   onReportSubmitted: (result: ReportSubmissionResult) => void;
@@ -32,27 +34,38 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
   const [subjectZone, setSubjectZone] = useState('');
   const [subjectDate, setSubjectDate] = useState('');
   const [subjectObs, setSubjectObservations] = useState('');
-  const [photoPreview, setPhotoPreview] = useState<string>(
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuARiLkW-jqQN830Kvg0mJt_orIstPc4y7szhoXINcAOZPHpR5BggPHa5dz1864uvroq50CrjeLfJvnN8qxWu9l_S61ZT0wjjKu6vp-x0KdTFhvS7bQrhmPJ-3u-o8_QvGMoDk-I5z8BmeQRmu4gWiOYBsSJxNg1eWvxTGXv9yGNyFt8hU0W00IS5wiu9B6NRu_N_ovnHhB4khvpaMvwNuXaF56JuHSvao_e_TlQbVYj0XnqpH4cMM3Jiw'
-  );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setPhotoPreview(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const folderCategory =
+    itemType === 'mascota'
+      ? 'pets'
+      : itemType === 'nn'
+      ? 'persons/unidentified'
+      : itemType === 'encontrado'
+      ? 'persons/found'
+      : 'persons/missing';
+
+  const {
+    items: imageItems,
+    isUploading: isUploadingImages,
+    primaryUrl,
+    globalError: imageGlobalError,
+    addFiles: onAddFiles,
+    removeImage: onRemoveImage,
+    retryUpload: onRetryUpload,
+    setPrimaryImage: onSetPrimaryImage,
+  } = useImageUpload({
+    maxImages: 3,
+    folderCategory,
+  });
 
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      const finalPhotoUrl =
+        primaryUrl ||
+        'https://placehold.co/400x400/e1e3e4/6d7a77?text=Sin+foto';
+
       const form = reportService.buildReportFormFromFlow({
         itemType,
         reporterRole,
@@ -66,7 +79,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
         subjectZone,
         subjectDate,
         subjectObs,
-        photoPreview,
+        photoPreview: finalPhotoUrl,
       });
 
       const result = await submitReport(form);
@@ -382,33 +395,18 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
           </p>
 
           <form onSubmit={handleFinalSubmit} className="space-y-6">
-            {/* Fotografía Dropzone */}
-            <div>
-              <label className="block text-xs font-bold text-[#191c1d] mb-2">
-                Fotografía (Opcional pero muy recomendado)
-              </label>
-              <div className="border-2 border-dashed border-[#bcc9c6] rounded-2xl p-6 bg-[#f8f9fa] flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#f3f4f5] transition-colors relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-                {photoPreview ? (
-                  <div className="relative w-32 h-32 rounded-xl overflow-hidden mb-2 border border-[#bcc9c6]">
-                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <span className="material-symbols-outlined text-4xl text-[#00685d] mb-2">
-                    add_a_photo
-                  </span>
-                )}
-                <span className="text-xs font-bold text-[#00685d]">
-                  {photoPreview ? 'Cambiar fotografía' : 'Sube un archivo o toca para seleccionar'}
-                </span>
-                <span className="text-[10px] text-[#6d7a77] mt-1">PNG, JPG hasta 10MB</span>
-              </div>
-            </div>
+            <ImageUploader
+              items={imageItems}
+              isUploading={isUploadingImages}
+              maxImages={3}
+              globalError={imageGlobalError}
+              onAddFiles={onAddFiles}
+              onRemoveImage={onRemoveImage}
+              onRetryUpload={onRetryUpload}
+              onSetPrimaryImage={onSetPrimaryImage}
+              label="Fotografías del caso"
+              helperText="Adjunta hasta 3 fotos (JPG, PNG, WEBP). Se optimizan automáticamente antes de subir."
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">

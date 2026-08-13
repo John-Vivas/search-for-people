@@ -9,6 +9,7 @@ import { EMERGENCY_ZONE_TREE } from '../../../data/mock/emergencyZones';
 import type { EmergencyZoneNode } from '../../../types/emergency-zone';
 import { isCityLevelZone, isDepartmentZone } from '../../../types/emergency-zone';
 import type { EmergencyZone, EmergencyZonePublic } from '../types/zone.db';
+import { isPostgrestMissingColumnError } from '../../../lib/postgrestErrors';
 import {
   buildCodeToIdMap,
   dbRowToPublic,
@@ -17,6 +18,11 @@ import {
   rowsToZoneNodes,
   rowToZoneNode,
 } from '../utils/zoneMappers';
+
+type ZoneSchemaMode = 'hierarchical' | 'flat';
+
+/** Avoid repeated 400s when DB uses the flat emergency_zones schema */
+let cachedZoneSchema: ZoneSchemaMode | null = null;
 
 function toDbZone(node: EmergencyZoneNode): EmergencyZone {
   const isCity = isCityLevelZone(node);
@@ -44,9 +50,9 @@ function mockNodesToPublic(nodes: EmergencyZoneNode[]): EmergencyZonePublic[] {
   return nodes.map(toDbZone).map((row) => dbRowToPublic(row as EmergencyZoneDbRow));
 }
 
-async function fetchZoneRows(
+async function fetchHierarchicalZoneRows(
   activeOnly: boolean
-): Promise<ServiceResponse<{ rows: EmergencyZoneDbRow[]; hierarchical: boolean }>> {
+): Promise<ServiceResponse<EmergencyZoneDbRow[]>> {
   const supabase = getSupabaseClient();
 
   let query = supabase
@@ -59,41 +65,108 @@ async function fetchZoneRows(
   }
 
   const { data, error } = await query;
-
-  if (!error) {
-    const rows = (data ?? []) as EmergencyZoneDbRow[];
-    return ok({
-      rows,
-      hierarchical: hasHierarchicalSchema(rows) || rows.some((r) => r.type != null),
-    });
-  }
-
-  const isMissingColumn =
-    error.code === '42703' ||
-    (error.message?.includes('does not exist') ?? false);
-
-  if (!isMissingColumn) {
+  if (error) {
     return fail(error, 'No se pudieron cargar las zonas de emergencia');
   }
 
-  let flatQuery = supabase
+  return ok((data ?? []) as EmergencyZoneDbRow[]);
+}
+
+async function fetchFlatZoneRows(
+  activeOnly: boolean
+): Promise<ServiceResponse<EmergencyZoneDbRow[]>> {
+  const supabase = getSupabaseClient();
+
+  let query = supabase
     .from('emergency_zones')
     .select(EMERGENCY_ZONE_COLUMNS_FLAT)
     .order('name', { ascending: true });
 
   if (activeOnly) {
-    flatQuery = flatQuery.eq('is_active', true);
+    query = query.eq('is_active', true);
   }
 
-  const flatResult = await flatQuery;
-  if (flatResult.error) {
+  const { data, error } = await query;
+  if (error) {
+    return fail(error, 'No se pudieron cargar las zonas de emergencia');
+  }
+
+  return ok((data ?? []) as EmergencyZoneDbRow[]);
+}
+
+async function fetchZoneRows(
+  activeOnly: boolean
+): Promise<ServiceResponse<{ rows: EmergencyZoneDbRow[]; hierarchical: boolean }>> {
+  if (cachedZoneSchema === 'hierarchical') {
+    const hierResult = await fetchHierarchicalZoneRows(activeOnly);
+    if (!hierResult.error && hierResult.data) {
+      const rows = hierResult.data;
+      return ok({
+        rows,
+        hierarchical: hasHierarchicalSchema(rows) || rows.some((r) => r.type != null),
+      });
+    }
+    // Fallback to flat if hierarchical query failed
+    cachedZoneSchema = 'flat';
+  }
+
+  // Query flat columns (supported on both flat and hierarchical schema without 400 errors)
+  const flatResult = await fetchFlatZoneRows(activeOnly);
+  if (flatResult.error || !flatResult.data) {
     return fail(flatResult.error, 'No se pudieron cargar las zonas de emergencia');
   }
 
-  return ok({
-    rows: (flatResult.data ?? []) as EmergencyZoneDbRow[],
-    hierarchical: false,
-  });
+  // If schema state is unknown, try hierarchical query once to check if migration 20250813000000 was applied
+  if (cachedZoneSchema === null) {
+    const hierTest = await fetchHierarchicalZoneRows(activeOnly);
+    if (!hierTest.error && hierTest.data && hierTest.data.length > 0) {
+      cachedZoneSchema = 'hierarchical';
+      const rows = hierTest.data;
+      return ok({
+        rows,
+        hierarchical: hasHierarchicalSchema(rows) || rows.some((r) => r.type != null),
+      });
+    }
+    cachedZoneSchema = 'flat';
+  }
+
+  return ok({ rows: flatResult.data, hierarchical: false });
+}
+
+async function fetchZoneRowById(id: string): Promise<ServiceResponse<EmergencyZone | null>> {
+  const supabase = getSupabaseClient();
+  const columns =
+    cachedZoneSchema === 'flat'
+      ? EMERGENCY_ZONE_COLUMNS_FLAT
+      : EMERGENCY_ZONE_COLUMNS_HIERARCHICAL;
+
+  const { data, error } = await supabase
+    .from('emergency_zones')
+    .select(columns)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!error) {
+    if (cachedZoneSchema === null && data) {
+      cachedZoneSchema = hasHierarchicalSchema([data as EmergencyZoneDbRow])
+        ? 'hierarchical'
+        : 'flat';
+    }
+    return ok(data as EmergencyZone | null);
+  }
+
+  if (isPostgrestMissingColumnError(error)) {
+    cachedZoneSchema = 'flat';
+    const flat = await supabase
+      .from('emergency_zones')
+      .select(EMERGENCY_ZONE_COLUMNS_FLAT)
+      .eq('id', id)
+      .maybeSingle();
+    if (flat.error) return fail(flat.error, 'No se pudo cargar la zona');
+    return ok(flat.data as EmergencyZone | null);
+  }
+
+  return fail(error, 'No se pudo cargar la zona');
 }
 
 export const zonesService = {
@@ -125,25 +198,7 @@ export const zonesService = {
     }
 
     try {
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase
-        .from('emergency_zones')
-        .select(EMERGENCY_ZONE_COLUMNS_HIERARCHICAL)
-        .eq('id', id)
-        .maybeSingle();
-
-      if (error?.code === '42703') {
-        const flat = await supabase
-          .from('emergency_zones')
-          .select(EMERGENCY_ZONE_COLUMNS_FLAT)
-          .eq('id', id)
-          .maybeSingle();
-        if (flat.error) return fail(flat.error, 'No se pudo cargar la zona');
-        return ok(flat.data as EmergencyZone | null);
-      }
-
-      if (error) return fail(error, 'No se pudo cargar la zona');
-      return ok(data as EmergencyZone | null);
+      return fetchZoneRowById(id);
     } catch (error) {
       return fail(error, 'No se pudo cargar la zona');
     }
@@ -159,14 +214,33 @@ export const zonesService = {
 
     try {
       const supabase = getSupabaseClient();
+      const columns =
+        cachedZoneSchema === 'flat'
+          ? EMERGENCY_ZONE_COLUMNS_FLAT
+          : EMERGENCY_ZONE_COLUMNS_HIERARCHICAL;
+
       const { data, error } = await supabase
         .from('emergency_zones')
-        .select(EMERGENCY_ZONE_COLUMNS_HIERARCHICAL)
+        .select(columns)
         .ilike('name', name)
         .maybeSingle();
 
-      if (error) return fail(error, 'No se pudo cargar la zona');
-      return ok(data as EmergencyZone | null);
+      if (!error) {
+        return ok(data as EmergencyZone | null);
+      }
+
+      if (isPostgrestMissingColumnError(error)) {
+        cachedZoneSchema = 'flat';
+        const flat = await supabase
+          .from('emergency_zones')
+          .select(EMERGENCY_ZONE_COLUMNS_FLAT)
+          .ilike('name', name)
+          .maybeSingle();
+        if (flat.error) return fail(flat.error, 'No se pudo cargar la zona');
+        return ok(flat.data as EmergencyZone | null);
+      }
+
+      return fail(error, 'No se pudo cargar la zona');
     } catch (error) {
       return fail(error, 'No se pudo cargar la zona');
     }

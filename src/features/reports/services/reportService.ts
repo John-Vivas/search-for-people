@@ -146,115 +146,70 @@ export const reportService = {
     }
 
     try {
+      console.log('[REPORT FLOW] step 1: Zone resolution');
       const zoneId = await resolveZoneId(form.locationZone);
       const reportType = itemTypeToReportType(form.itemType);
       const approximateAge = parseApproximateAge(form.subjectAge);
       const lastSeenAt = form.eventDate
         ? new Date(form.eventDate).toISOString()
         : new Date().toISOString();
+      console.log('[REPORT FLOW] step 1: success');
 
-      const reporterRes = await reportersService.createReporter({
-        reporter_type: mapRoleUIToType(form.reporterRole),
-        full_name: form.reporterName,
-        identification_number: form.reporterDocumentId || null,
-        phone: form.reporterPhone || null,
-        email: form.reporterEmail || null,
-        relationship: form.reporterRelationship || null,
+      const identifierCode =
+        form.itemType === 'nn'
+          ? `NN-${Date.now().toString().slice(-6)}`
+          : `REP-${Date.now().toString().slice(-6)}`;
+
+      console.log('[REPORT FLOW] step 2: RPC submit_community_report');
+      const supabase = getSupabaseClient();
+      const { data: rpcRows, error: rpcError } = await supabase.rpc('submit_community_report', {
+        p_reporter_type: mapRoleUIToType(form.reporterRole),
+        p_reporter_full_name: form.reporterName,
+        p_reporter_identification: form.reporterDocumentId || null,
+        p_reporter_phone: form.reporterPhone || null,
+        p_reporter_email: form.reporterEmail || null,
+        p_reporter_relationship: form.reporterRelationship || null,
+        p_report_type: reportType,
+        p_subject_name: form.itemType === 'nn' ? null : form.subjectName || null,
+        p_identifier_code: identifierCode,
+        p_approximate_age: approximateAge,
+        p_sex: form.subjectGender || null,
+        p_description: form.observations || null,
+        p_last_seen_at: lastSeenAt,
+        p_zone_id: zoneId,
+        p_pet_species: form.itemType === 'mascota' ? 'Mascota' : null,
       });
 
-      if (reporterRes.error || !reporterRes.data) {
-        return fail(reporterRes.error, 'No se pudo registrar al reportante');
-      }
-
-      let personId: string | null = null;
-      let petId: string | null = null;
-
-      if (form.itemType === 'mascota') {
-        const petRes = await petsService.createPet({
-          zone_id: zoneId,
-          name: form.subjectName || null,
-          species: 'Mascota',
-          breed: null,
-          color: null,
-          sex: form.subjectGender || null,
-          approximate_age: approximateAge,
-          description: form.observations || null,
-          status: itemTypeToPetStatus(form.itemType),
-          last_seen_at: lastSeenAt,
-          current_location_id: null,
-          last_seen_location_id: null,
-          is_verified: false,
+      if (rpcError) {
+        console.error('[REPORT FLOW] step 2: error', {
+          code: rpcError.code,
+          message: rpcError.message,
         });
-
-        if (petRes.error || !petRes.data) {
-          return fail(petRes.error, 'No se pudo registrar la mascota');
-        }
-        petId = petRes.data.id;
-      } else {
-        const identifierCode =
-          form.itemType === 'nn'
-            ? `NN-${Date.now().toString().slice(-6)}`
-            : `REP-${Date.now().toString().slice(-6)}`;
-
-        const personRes = await personsService.createPerson({
-          zone_id: zoneId,
-          full_name: form.itemType === 'nn' ? null : form.subjectName || null,
-          identifier_code: identifierCode,
-          date_of_birth: null,
-          approximate_age: approximateAge,
-          age_is_approximate: true,
-          sex: form.subjectGender || null,
-          description: form.observations || null,
-          physical_description: null,
-          clothing_description: null,
-          distinguishing_features: null,
-          status: itemTypeToPersonStatus(form.itemType),
-          last_seen_at: lastSeenAt,
-          current_location_id: null,
-          current_facility_id: null,
-          last_seen_location_id: null,
-          is_verified: false,
-        });
-
-        if (personRes.error || !personRes.data) {
-          return fail(personRes.error, 'No se pudo registrar a la persona');
-        }
-        personId = personRes.data.id;
+        const msg =
+          rpcError.code === 'PGRST202'
+            ? 'La función de reporte no se encuentra en Supabase. Ejecute 20250813140000_submit_community_report_rpc.sql en el SQL Editor de Supabase.'
+            : rpcError.message || 'Error al ejecutar RPC submit_community_report';
+        return fail(rpcError, msg);
       }
+      console.log('[REPORT FLOW] step 2: success');
 
-      const reportRes = await reportsService.createReport({
-        reporter_id: reporterRes.data.id,
-        report_type: reportType,
-        person_id: personId,
-        pet_id: petId,
-        description: form.observations || null,
-        status: 'PENDING',
-      });
+      const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
+      const reportId = rpcResult?.report_id || `rep-${Date.now()}`;
+      const personId = rpcResult?.person_id || null;
+      const petId = rpcResult?.pet_id || null;
+      const submittedAt = rpcResult?.submitted_at || new Date().toISOString();
 
-      if (reportRes.error || !reportRes.data) {
-        return fail(reportRes.error, 'No se pudo enviar el reporte');
-      }
-
-      const queueRes = await reportsService.getAdminReportQueue(1);
-      const adminFromQueue = queueRes.data?.find((r) => r.id === reportRes.data!.id);
-
-      if (adminFromQueue) {
-        return ok({
-          adminReport: adminFromQueue,
-          publishToPublicCatalog: false,
-        });
-      }
-
+      console.log('[REPORT FLOW] step 3: Admin DTO construction');
       const fallbackRow: AdminReportQueueRow = {
-        report_id: reportRes.data.id,
+        report_id: reportId,
         report_type: reportType,
         report_status: 'PENDING',
         report_description: form.observations || null,
-        submitted_at: reportRes.data.submitted_at,
+        submitted_at: submittedAt,
         reviewed_at: null,
         person_id: personId,
         pet_id: petId,
-        reporter_id: reporterRes.data.id,
+        reporter_id: rpcResult?.reporter_id || `rep-${Date.now()}`,
         reporter_type: mapRoleUIToType(form.reporterRole),
         reporter_full_name: form.reporterName,
         reporter_identification: form.reporterDocumentId || null,
@@ -273,12 +228,18 @@ export const reportService = {
         zone_city: form.locationZone.split(',')[0]?.trim() ?? null,
       };
 
+      console.log('[REPORT FLOW] step 3: success');
+
       return ok({
         adminReport: mapAdminQueueRowToAdminReportItem(fallbackRow),
         publishToPublicCatalog: false,
       });
     } catch (error) {
-      return fail(error, 'No se pudo completar el envío del reporte');
+      console.error('[REPORT FLOW] error', {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      const errorMsg = error instanceof Error ? error.message : 'No se pudo completar el envío del reporte';
+      return fail(error, errorMsg);
     }
   },
 

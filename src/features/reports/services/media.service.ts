@@ -112,5 +112,55 @@ export const mediaService = {
     } catch (error) {
       return fail(error, 'No se pudo obtener la URL del archivo');
     }
+  /**
+   * Register Cloudinary uploaded image reference in PostgreSQL report_media table
+   */
+  async registerCloudinaryMedia(input: {
+    cloudinaryUrl: string;
+    cloudinaryPublicId: string;
+    mediaType: MediaType;
+    reportId?: string;
+    personId?: string;
+    petId?: string;
+    isPrimary?: boolean;
+  }): Promise<ServiceResponse<ReportMedia>> {
+    if (isMockMode()) {
+      return ok({
+        id: `mock-media-${Date.now()}`,
+        report_id: input.reportId ?? null,
+        person_id: input.personId ?? null,
+        pet_id: input.petId ?? null,
+        storage_bucket: 'cloudinary',
+        storage_path: input.cloudinaryPublicId,
+        media_type: input.mediaType,
+        mime_type: 'image/webp',
+        file_size_bytes: 0,
+        is_primary: input.isPrimary ?? false,
+        created_at: new Date().toISOString(),
+      } as ReportMedia);
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('report_media')
+        .insert({
+          storage_bucket: 'cloudinary',
+          storage_path: input.cloudinaryPublicId,
+          media_type: input.mediaType,
+          mime_type: 'image/webp',
+          report_id: input.reportId ?? null,
+          person_id: input.personId ?? null,
+          pet_id: input.petId ?? null,
+          is_primary: input.isPrimary ?? false,
+        })
+        .select(MEDIA_COLUMNS)
+        .single();
+
+      if (error) return fail(error, 'No se pudo registrar la referencia de la fotografía');
+      return ok(data as ReportMedia);
+    } catch (error) {
+      return fail(error, 'No se pudo registrar la referencia de la fotografía');
+    }
   },
 };
