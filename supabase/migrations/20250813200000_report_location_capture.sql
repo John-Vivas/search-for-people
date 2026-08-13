@@ -18,12 +18,21 @@ create policy locations_public_select
     using (true);
 
 -- ── 2. RPC con captura de ubicación ──
--- Se elimina la firma anterior (17 args, con p_photo_url) para evitar overloads.
-drop function if exists public.submit_community_report(
-    public.reporter_type, varchar, varchar, varchar, varchar, varchar,
-    public.report_type, varchar, varchar, integer, varchar, text,
-    timestamptz, uuid, varchar, varchar, varchar, text
-);
+-- Elimina CUALQUIER versión previa de submit_community_report (todas sus
+-- sobrecargas) para evitar conflictos de firma o de tipo de retorno.
+do $$
+declare
+    r record;
+begin
+    for r in
+        select oid::regprocedure as sig
+        from pg_proc
+        where proname = 'submit_community_report'
+          and pronamespace = 'public'::regnamespace
+    loop
+        execute 'drop function ' || r.sig || ' cascade';
+    end loop;
+end $$;
 
 create or replace function public.submit_community_report(
     p_reporter_type public.reporter_type,
