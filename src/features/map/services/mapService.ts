@@ -12,6 +12,13 @@ import { mockApiCall, ok, fail, ServiceResponse } from '@/src/services/api/error
 import { zonesService } from '@/src/features/map/services/zones.service';
 import { locationMatchesZoneFilter } from '@/src/features/map/utils/zoneTree';
 import { resolveZoneId as mapLegacyZoneId } from '@/src/features/map/utils/zoneMappers';
+import { personsService } from '@/src/features/persons/services/persons.service';
+import { petsService } from '@/src/features/pets/services/pets.service';
+import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
+import {
+  personRecordToMapLocation,
+  petRecordToMapLocation,
+} from '@/src/features/map/mappers/mapLocation.mapper';
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 
@@ -28,14 +35,29 @@ async function loadZones(): Promise<ServiceResponse<EmergencyZone[]>> {
   return ok(res.data);
 }
 
-async function loadLocations(zones: EmergencyZone[]): Promise<MapLocation[]> {
+async function loadLocations(_zones: EmergencyZone[]): Promise<MapLocation[]> {
   if (isMockMode()) {
     await delay();
     return MOCK_MAP_LOCATIONS;
   }
 
-  // Locations desde Supabase — Fase 10; mientras tanto vacío
-  return [];
+  // Datos reales: personas + mascotas → puntos del mapa. Comparte el contexto
+  // de enriquecimiento (zonas + ubicaciones) con el catálogo (cacheado).
+  const [ctx, personsRes, petsRes] = await Promise.all([
+    loadEnrichmentContext(),
+    personsService.getPersons({ limit: 1000 }),
+    petsService.getPets({ limit: 1000 }),
+  ]);
+
+  const persons = (personsRes.data ?? [])
+    .map((row) => personRecordToMapLocation(row, ctx))
+    .filter((l): l is Exclude<typeof l, null> => l !== null);
+
+  const pets = (petsRes.data ?? [])
+    .map((row) => petRecordToMapLocation(row, ctx))
+    .filter((l): l is Exclude<typeof l, null> => l !== null);
+
+  return [...persons, ...pets];
 }
 
 /** Remapea zoneId legacy (slug) a UUID cuando hay datos en Supabase */
