@@ -11,7 +11,12 @@ export type AidResourceType =
 
 export type AidStatus = 'OPEN' | 'COMMITTED' | 'EN_ROUTE' | 'DELIVERED' | 'CANCELLED';
 
-/** Row shape returned by Supabase for public.aid_requests */
+/**
+ * Row shape returned by Supabase for public.aid_requests (public read) and
+ * by the backend's write endpoints. Phone numbers are never part of this
+ * shape — they live in aid_request_secrets and only the backend can read
+ * them (see AidRequestPhones + aidRequestsService.listPhones).
+ */
 export interface AidRequest {
   id: string;
   resource_type: AidResourceType;
@@ -21,14 +26,13 @@ export interface AidRequest {
   urgency: number;
   status: AidStatus;
   description: string | null;
-  requester_org: string | null;
-  requester_contact: string | null;
-  provider_org: string | null;
+  requester_name: string;
+  provider_name: string | null;
   eta_minutes: number | null;
   zone_id: string | null;
   latitude: number | null;
   longitude: number | null;
-  address: string | null;
+  address: string;
   place_name: string | null;
   created_at: string;
   committed_at: string | null;
@@ -36,20 +40,42 @@ export interface AidRequest {
   updated_at: string;
 }
 
+/**
+ * Who to call for a request — only available from the backend to a
+ * logged-in (phone-verified) session. `requesterPhone` is shown to any
+ * logged-in viewer so they can reach out before committing; `providerPhone`
+ * only exists once someone has committed.
+ */
+export interface AidRequestPhones {
+  id: string;
+  requesterPhone: string;
+  providerPhone: string | null;
+}
+
+/**
+ * Optional fields must be omitted (`undefined`), not `null` — the backend's
+ * Zod schema uses `.optional()`, which only accepts a missing key, not an
+ * explicit `null`. `null` fails validation there. Whoever builds this
+ * payload (AidRequestForm) must use `?? undefined`, never `?? null`.
+ */
 export interface CreateAidRequestInput {
   resourceType: AidResourceType;
-  quantity?: number | null;
-  unit?: string | null;
+  quantity?: number;
+  unit?: string;
   urgency?: number;
-  resourceLabel?: string | null;
-  description?: string | null;
-  requesterOrg?: string | null;
-  requesterContact?: string | null;
-  zoneId?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  address?: string | null;
-  placeName?: string | null;
+  resourceLabel?: string;
+  description?: string;
+  requesterName: string;
+  address: string;
+  zoneId?: string;
+  latitude?: number;
+  longitude?: number;
+  placeName?: string;
+}
+
+export interface CommitAidRequestInput {
+  providerName: string;
+  etaMinutes?: number;
 }
 
 export const RESOURCE_TYPE_LABELS: Record<AidResourceType, string> = {
@@ -71,9 +97,29 @@ export const RESOURCE_TYPE_ICONS: Record<AidResourceType, string> = {
   MEDICAL: 'medical_services',
   CLOTHING: 'checkroom',
   HYGIENE: 'sanitizer',
-  VOLUNTEERS: 'diversity_3',
+  // Reuses the same icon as the app's other "help/volunteering" surfaces
+  // (e.g. the collection-point tab in RegisterPlaceModal).
+  VOLUNTEERS: 'volunteer_activism',
   TOOLS: 'construction',
   OTHER: 'category',
+};
+
+/**
+ * Color per resource type — purely a visual grouping aid (not a status
+ * signal), built from the app's real theme tokens (see src/index.css
+ * `@theme`) so it reads as part of the same design system instead of the
+ * flat black pill the board used to have.
+ */
+export const RESOURCE_TYPE_COLORS: Record<AidResourceType, { bg: string; text: string }> = {
+  FOOD: { bg: '#d6f0e5', text: '#00685d' },
+  WATER: { bg: '#c6e8f8', text: '#436370' },
+  SHELTER: { bg: '#fbe6c2', text: '#735802' },
+  MEDICAL: { bg: '#c6e8f8', text: '#436370' },
+  CLOTHING: { bg: '#d6f0e5', text: '#00685d' },
+  HYGIENE: { bg: '#fbe6c2', text: '#735802' },
+  VOLUNTEERS: { bg: '#d6f0e5', text: '#00685d' },
+  TOOLS: { bg: '#e1e3e4', text: '#3d4947' },
+  OTHER: { bg: '#e1e3e4', text: '#3d4947' },
 };
 
 export const STATUS_LABELS: Record<AidStatus, string> = {
@@ -84,17 +130,52 @@ export const STATUS_LABELS: Record<AidStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
-/** Tailwind-ish color pairs (bg + text) for status badges */
+/** Color pairs (bg + text) for status badges — same theme tokens as the rest of the app. */
 export const STATUS_STYLES: Record<AidStatus, { bg: string; text: string }> = {
-  OPEN: { bg: '#fddede', text: '#ba1a1a' },
-  COMMITTED: { bg: '#1c1c1c', text: '#ffffff' },
-  EN_ROUTE: { bg: '#fbe6c2', text: '#8e5a00' },
-  DELIVERED: { bg: '#d6f0e5', text: '#00685d' },
-  CANCELLED: { bg: '#e7e8e9', text: '#6d7a77' },
+  OPEN: { bg: '#ffdad6', text: '#ba1a1a' },
+  COMMITTED: { bg: '#c6e8f8', text: '#436370' },
+  EN_ROUTE: { bg: '#e7c268', text: '#735802' },
+  DELIVERED: { bg: '#8cf5e4', text: '#00685d' },
+  CANCELLED: { bg: '#e1e3e4', text: '#6d7a77' },
 };
 
-export function urgencyColor(urgency: number): { bg: string; text: string } {
-  if (urgency >= 4) return { bg: '#ba1a1a', text: '#ffffff' };
-  if (urgency === 3) return { bg: '#8e5a00', text: '#ffffff' };
-  return { bg: '#8e711f', text: '#ffffff' };
+/**
+ * The compact badge shown next to a card's title collapses COMMITTED and
+ * EN_ROUTE into one "En proceso" bucket — the distinction between them
+ * still matters (see the expanded detail section), just not at a glance.
+ */
+export function statusBadge(status: AidStatus): { label: string; bg: string; text: string } {
+  if (status === 'COMMITTED' || status === 'EN_ROUTE') {
+    return { label: 'En proceso', ...STATUS_STYLES.COMMITTED };
+  }
+  return { label: STATUS_LABELS[status], ...STATUS_STYLES[status] };
+}
+
+/**
+ * Urgency keeps its own color scale, deliberately separate from
+ * RESOURCE_TYPE_COLORS/STATUS_STYLES — this is the one signal that must
+ * stay unambiguous ("how urgent is this, really?") even as the rest of the
+ * card gets friendlier. `accent` is the solid tone for the card's left
+ * edge; `bg`/`text` are the softer pair for the pill badge.
+ */
+export interface UrgencyInfo {
+  label: string;
+  bg: string;
+  text: string;
+  accent: string;
+}
+
+export function urgencyInfo(urgency: number): UrgencyInfo {
+  if (urgency >= 4) return { label: 'Crítica', bg: '#ffdad6', text: '#ba1a1a', accent: '#ba1a1a' };
+  if (urgency === 3) return { label: 'Alta', bg: '#fbe6c2', text: '#735802', accent: '#e7a325' };
+  return { label: 'Media', bg: '#d6f0e5', text: '#00685d', accent: '#00685d' };
+}
+
+/**
+ * Short, human-friendly display code (e.g. "#A-3F9C21") derived from the
+ * UUID — purely presentational, not stored anywhere, matching the
+ * `#PET-…`/`#REP-…` short-code convention used elsewhere in the app.
+ */
+export function shortRequestCode(id: string): string {
+  return `#A-${id.replace(/-/g, '').slice(0, 6).toUpperCase()}`;
 }

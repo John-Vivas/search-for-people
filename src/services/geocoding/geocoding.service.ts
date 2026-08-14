@@ -14,6 +14,7 @@ export interface GeocodeResult {
 }
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_REVERSE_URL = 'https://nominatim.openstreetmap.org/reverse';
 const REQUEST_TIMEOUT_MS = 6000;
 
 /**
@@ -58,6 +59,34 @@ export async function geocodeAddress(parts: {
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
 
     return { latitude, longitude, displayName: first.display_name };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Best-effort coordinates → address, for when someone picks a point on the
+ * map instead of typing one (e.g. the Ayuda location picker). Same
+ * best-effort contract as geocodeAddress: null on any failure, caller falls
+ * back to something else (e.g. raw coordinates as text).
+ */
+export async function reverseGeocode(latitude: number, longitude: number): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const url = `${NOMINATIM_REVERSE_URL}?format=json&lat=${latitude}&lon=${longitude}&zoom=18`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { display_name?: string };
+    return data.display_name?.trim() || null;
   } catch {
     return null;
   } finally {

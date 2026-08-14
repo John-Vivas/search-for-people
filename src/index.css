@@ -32,26 +32,36 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-.material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
+/*
+ * Wrapped in `@layer base` on purpose: Tailwind v4 gives unlayered CSS
+ * higher priority than ANY layered rule, even utilities, regardless of
+ * source order or specificity. Left unlayered, this 24px default silently
+ * beat every `text-[Npx]` utility used to shrink an icon (e.g. inside a
+ * small badge/chip), no matter what size was requested. Layering it as
+ * `base` lets the (higher-priority) `utilities` layer override it normally.
+ */
+@layer base {
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
 
-.material-symbols-outlined[data-weight="fill"],
-.material-symbols-outlined.icon-fill {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  .material-symbols-outlined[data-weight="fill"],
+  .material-symbols-outlined.icon-fill {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
 }
 
 /* Interactive UI chrome shouldn't place a text caret or select text on click
