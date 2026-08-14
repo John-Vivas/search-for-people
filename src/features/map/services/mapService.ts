@@ -14,10 +14,12 @@ import { locationMatchesZoneFilter } from '@/src/features/map/utils/zoneTree';
 import { resolveZoneId as mapLegacyZoneId } from '@/src/features/map/utils/zoneMappers';
 import { personsService } from '@/src/features/persons/services/persons.service';
 import { petsService } from '@/src/features/pets/services/pets.service';
+import { facilitiesService } from '@/src/features/map/services/facilities.service';
 import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
 import {
   personRecordToMapLocation,
   petRecordToMapLocation,
+  facilityRecordToMapLocation,
 } from '@/src/features/map/mappers/mapLocation.mapper';
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
@@ -43,10 +45,11 @@ async function loadLocations(_zones: EmergencyZone[]): Promise<MapLocation[]> {
 
   // Datos reales: personas + mascotas → puntos del mapa. Comparte el contexto
   // de enriquecimiento (zonas + ubicaciones) con el catálogo (cacheado).
-  const [ctx, personsRes, petsRes] = await Promise.all([
+  const [ctx, personsRes, petsRes, facilitiesRes] = await Promise.all([
     loadEnrichmentContext(),
     personsService.getPersons({ limit: 1000 }),
     petsService.getPets({ limit: 1000 }),
+    facilitiesService.getFacilities({ limit: 1000 }),
   ]);
 
   const persons = (personsRes.data ?? [])
@@ -57,7 +60,11 @@ async function loadLocations(_zones: EmergencyZone[]): Promise<MapLocation[]> {
     .map((row) => petRecordToMapLocation(row, ctx))
     .filter((l): l is Exclude<typeof l, null> => l !== null);
 
-  return [...persons, ...pets];
+  const facilities = (facilitiesRes.data ?? [])
+    .map((row) => facilityRecordToMapLocation(row, ctx))
+    .filter((l): l is Exclude<typeof l, null> => l !== null);
+
+  return [...persons, ...pets, ...facilities];
 }
 
 /** Remapea zoneId legacy (slug) a UUID cuando hay datos en Supabase */

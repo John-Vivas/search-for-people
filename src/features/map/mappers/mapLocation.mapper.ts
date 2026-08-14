@@ -2,10 +2,13 @@ import type { PersonEnrichmentContext } from '@/src/features/persons/mappers/per
 import type {
   PersonLocation,
   PetLocation,
+  FacilityLocation,
   PersonMapStatus,
+  FacilityType,
 } from '@/src/features/map/types/map.types';
 import type { PersonRecord } from '@/src/features/persons/services/persons.service';
 import type { PetRecord } from '@/src/features/pets/services/pets.service';
+import type { FacilityPublic } from '@/src/features/map/types/zone.db';
 import { toTitleCase } from '@/src/lib/formatText';
 
 /**
@@ -104,5 +107,53 @@ export function petRecordToMapLocation(
     photo: row.primary_photo_url ?? undefined,
     lastSeenDate: row.last_seen_at ?? row.updated_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function resolveFacilityCoords(
+  row: { location_id: string | null; zone_id: string | null },
+  ctx: PersonEnrichmentContext
+): [number, number] | null {
+  if (row.location_id) {
+    const loc = ctx.locationsById.get(row.location_id);
+    if (loc) return [loc.latitude, loc.longitude];
+  }
+  if (row.zone_id) {
+    const zone = ctx.zonesById.get(row.zone_id);
+    if (zone?.latitude != null && zone?.longitude != null) {
+      return [zone.latitude, zone.longitude];
+    }
+  }
+  return null;
+}
+
+/** El enum del mapa es más reducido que el de la BD; mapeamos al más cercano. */
+function toMapFacilityType(dbType: string): FacilityType {
+  if (dbType === 'HOSPITAL') return 'HOSPITAL';
+  if (dbType === 'SHELTER') return 'SHELTER';
+  if (dbType === 'CLINIC') return 'MEDICAL_CENTER';
+  return 'OTHER';
+}
+
+/** Centro (atención o acopio) → punto del mapa. */
+export function facilityRecordToMapLocation(
+  row: FacilityPublic,
+  ctx: PersonEnrichmentContext
+): FacilityLocation | null {
+  const coords = resolveFacilityCoords(row, ctx);
+  if (!coords) return null;
+
+  return {
+    type: 'FACILITY',
+    id: `facility-${row.id}`,
+    locationId: row.location_id ?? '',
+    zoneId: row.zone_id ?? '',
+    zoneName: resolveZoneName(row.zone_id, ctx),
+    latitude: coords[0],
+    longitude: coords[1],
+    facilityType: toMapFacilityType(row.facility_type),
+    name: toTitleCase(row.name) || 'Centro',
+    registeredCount: 0,
+    updatedAt: '',
   };
 }

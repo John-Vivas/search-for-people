@@ -292,7 +292,14 @@ export function App() {
             />
             <Route
               path="/mapa"
-              element={<MapView onViewLocationDetail={() => { /* map detail navigation TBD */ }} />}
+              element={
+                <MapView
+                  onViewLocationDetail={(location) => {
+                    if (location.type === 'PERSON') navigate(`/caso/${location.personId}`);
+                    else if (location.type === 'PET') navigate(`/caso/${location.petId}`);
+                  }}
+                />
+              }
             />
             <Route
               path="/reportar"
