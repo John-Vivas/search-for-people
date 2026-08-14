@@ -2,6 +2,7 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 import { isMockMode } from '@/src/lib/dataSource';
 import { ok, fail, ServiceResponse } from '@/src/services/api/errors';
 import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { invalidateMapData } from '@/src/features/map/services/mapService';
 
 export type CaseKind = 'person' | 'pet';
 
@@ -27,6 +28,7 @@ export async function setCaseStatus(input: {
     });
     if (error) return fail(error, 'No se pudo actualizar el estado del caso');
     invalidateEnrichmentContext();
+    invalidateMapData();
     return ok(null);
   } catch (error) {
     return fail(error, 'No se pudo actualizar el estado del caso');

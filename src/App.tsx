@@ -166,6 +166,12 @@ function AdminReportRoute({
 }
 
 export function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const currentTab = pathToTab(location.pathname);
+  const isAdminRoute = currentTab === 'admin' || currentTab === 'admin_detail';
+
   const personsData = usePersons();
   const { items, loading, error, refetch, addPersonItem } = personsData;
   const {
@@ -177,12 +183,7 @@ export function App() {
     approveReport,
     rejectReport,
     updateReportStatus,
-  } = useAdminReports();
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const currentTab = pathToTab(location.pathname);
+  } = useAdminReports(isAdminRoute);
 
   const [sightingItem, setSightingItem] = useState<PersonItem | null>(null);
   const [isSightingModalOpen, setIsSightingModalOpen] = useState(false);

@@ -3,7 +3,7 @@ import { AdminReportItem } from '@/src/features/reports/types/report';
 import { adminService } from '@/src/features/admin/services/adminService';
 import { isMockMode } from '@/src/lib/dataSource';
 
-export function useAdminReports() {
+export function useAdminReports(enabled = true) {
   const [adminReports, setAdminReports] = useState<AdminReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +24,14 @@ export function useAdminReports() {
   }, []);
 
   useEffect(() => {
+    // Solo carga la cola de reportes cuando hace falta (panel /admin). Evita
+    // pedirla —y que falle por RLS— en cada página (mapa, inicio, etc.).
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     fetchReports();
-  }, [fetchReports]);
+  }, [fetchReports, enabled]);
 
   useEffect(() => {
     if (isMockMode() && adminReports.length > 0) {

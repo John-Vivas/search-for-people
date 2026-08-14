@@ -24,6 +24,17 @@ import {
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 
+type MapData = { zones: EmergencyZone[]; locations: MapLocation[] };
+const MAP_TTL_MS = 60 * 1000; // caché corta: evita refetch en re-renders / re-navegación
+let mapDataCache: { data: MapData; at: number } | null = null;
+let mapDataInflight: Promise<ServiceResponse<MapData>> | null = null;
+
+/** Descarta la caché del mapa (p. ej. tras registrar una zona/centro). */
+export function invalidateMapData(): void {
+  mapDataCache = null;
+  mapDataInflight = null;
+}
+
 async function loadZones(): Promise<ServiceResponse<EmergencyZone[]>> {
   if (isMockMode()) {
     await delay();
@@ -156,16 +167,37 @@ export const mapService = {
     return ok(data);
   },
 
-  async getMapData(): Promise<
-    ServiceResponse<{ zones: EmergencyZone[]; locations: MapLocation[] }>
-  > {
-    const zonesRes = await loadZones();
-    if (zonesRes.error || !zonesRes.data) {
-      return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+  async getMapData(): Promise<ServiceResponse<MapData>> {
+    if (isMockMode()) {
+      const zonesRes = await loadZones();
+      if (zonesRes.error || !zonesRes.data) {
+        return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+      }
+      const locations = await loadLocations(zonesRes.data);
+      return ok({ zones: zonesRes.data, locations });
     }
 
-    const locations = await loadLocations(zonesRes.data);
-    return ok({ zones: zonesRes.data, locations });
+    // Caché corta + dedupe: re-renders o navegar y volver no vuelven a pegarle
+    // a Supabase. Se invalida al registrar (invalidateMapData).
+    if (mapDataCache && Date.now() - mapDataCache.at < MAP_TTL_MS) {
+      return ok(mapDataCache.data);
+    }
+    if (mapDataInflight) return mapDataInflight;
+
+    mapDataInflight = (async (): Promise<ServiceResponse<MapData>> => {
+      const zonesRes = await loadZones();
+      if (zonesRes.error || !zonesRes.data) {
+        return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+      }
+      const locations = await loadLocations(zonesRes.data);
+      const data: MapData = { zones: zonesRes.data, locations };
+      mapDataCache = { data, at: Date.now() };
+      return ok(data);
+    })().finally(() => {
+      mapDataInflight = null;
+    });
+
+    return mapDataInflight;
   },
 };
 
