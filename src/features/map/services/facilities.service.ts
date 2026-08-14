@@ -6,9 +6,39 @@ import type {
   FacilityInsert,
   FacilityPublic,
   FacilitySearchFilters,
+  FacilityType,
 } from '@/src/features/map/types/zone.db';
 
 export const facilitiesService = {
+  /** Registro comunitario de un centro (atención o acopio) vía RPC. */
+  async createCommunityFacility(input: {
+    name: string;
+    facilityType: FacilityType;
+    zoneId?: string | null;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  }): Promise<ServiceResponse<FacilityPublic>> {
+    if (isMockMode()) {
+      return fail(new Error('Mock mode'), 'Registro disponible con Supabase');
+    }
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.rpc('create_community_facility', {
+        p_name: input.name,
+        p_facility_type: input.facilityType,
+        p_zone_id: input.zoneId ?? null,
+        p_address: input.address ?? null,
+        p_latitude: input.latitude ?? null,
+        p_longitude: input.longitude ?? null,
+      });
+      if (error) return fail(error, 'No se pudo registrar el centro');
+      return ok(data as FacilityPublic);
+    } catch (error) {
+      return fail(error, 'No se pudo registrar el centro');
+    }
+  },
+
   async getFacilities(
     filters: FacilitySearchFilters = {}
   ): Promise<ServiceResponse<FacilityPublic[]>> {

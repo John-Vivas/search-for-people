@@ -22,6 +22,7 @@ export const MapView: React.FC<MapViewProps> = ({
   onFiltersChange,
   onViewLocationDetail,
   onViewZoneRecords,
+  onOpenRegister,
 }) => {
   const departments = useMemo(() => getDepartmentZones(zones), [zones]);
 
@@ -187,6 +188,17 @@ export const MapView: React.FC<MapViewProps> = ({
           <div className="hidden md:block absolute bottom-4 left-4 z-10 max-w-[180px]">
             <MapLegend />
           </div>
+
+          {onOpenRegister && (
+            <button
+              onClick={onOpenRegister}
+              className="absolute bottom-4 right-4 z-[500] flex items-center gap-2 h-11 px-4 rounded-full bg-[#00685d] text-white font-bold text-sm shadow-lg hover:bg-[#008376] transition-colors cursor-pointer"
+              title="Registrar zona o centro"
+            >
+              <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
+              <span className="hidden sm:inline">Registrar lugar</span>
+            </button>
+          )}
         </div>
 
         <div className="lg:hidden shrink-0 max-h-[45vh] overflow-y-auto bg-[#f8f9fa] border-t border-[#e1e3e4]">

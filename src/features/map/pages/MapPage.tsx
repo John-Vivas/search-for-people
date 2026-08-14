@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MapView } from '@/src/features/map/components/MapView';
+import { RegisterPlaceModal } from '@/src/features/map/components/RegisterPlaceModal';
 import { useMapData } from '@/src/features/map/hooks/useMapData';
 import { useMapFilters } from '@/src/features/map/hooks/useMapFilters';
 import { MapLocation } from '@/src/features/map/types/map.types';
@@ -9,7 +10,8 @@ interface MapPageProps {
 }
 
 export const MapPage: React.FC<MapPageProps> = ({ onViewLocationDetail }) => {
-  const { zones, locations, loading, error } = useMapData();
+  const { zones, locations, loading, error, reload } = useMapData();
+  const [registerOpen, setRegisterOpen] = useState(false);
   const {
     filters,
     filteredLocations,
@@ -50,19 +52,28 @@ export const MapPage: React.FC<MapPageProps> = ({ onViewLocationDetail }) => {
   };
 
   return (
-    <MapView
-      locations={filteredLocations}
-      zones={zones}
-      mapDisplayZones={mapDisplayZones}
-      selectedLocation={selectedLocation}
-      selectedZone={selectedZone}
-      activeZoneStats={activeZoneStats}
-      filters={filters}
-      onLocationSelect={selectLocation}
-      onZoneSelect={selectZone}
-      onFiltersChange={updateFilters}
-      onViewLocationDetail={onViewLocationDetail}
-      onViewZoneRecords={handleViewZoneRecords}
-    />
+    <>
+      <MapView
+        locations={filteredLocations}
+        zones={zones}
+        mapDisplayZones={mapDisplayZones}
+        selectedLocation={selectedLocation}
+        selectedZone={selectedZone}
+        activeZoneStats={activeZoneStats}
+        filters={filters}
+        onLocationSelect={selectLocation}
+        onZoneSelect={selectZone}
+        onFiltersChange={updateFilters}
+        onViewLocationDetail={onViewLocationDetail}
+        onViewZoneRecords={handleViewZoneRecords}
+        onOpenRegister={() => setRegisterOpen(true)}
+      />
+      <RegisterPlaceModal
+        open={registerOpen}
+        zones={zones}
+        onClose={() => setRegisterOpen(false)}
+        onRegistered={reload}
+      />
+    </>
   );
 };

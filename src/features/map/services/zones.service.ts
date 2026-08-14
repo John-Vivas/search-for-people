@@ -189,6 +189,33 @@ export const zonesService = {
     }
   },
 
+  /** Registro comunitario de una zona (depto/ciudad/municipio) vía RPC. */
+  async createCommunityZone(input: {
+    name: string;
+    type?: 'DEPARTMENT' | 'CITY' | 'MUNICIPALITY' | 'DISTRICT';
+    parentId?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  }): Promise<ServiceResponse<EmergencyZonePublic>> {
+    if (isMockMode()) {
+      return fail(new Error('Mock mode'), 'Registro disponible con Supabase');
+    }
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.rpc('create_community_zone', {
+        p_name: input.name,
+        p_type: input.type ?? 'CITY',
+        p_parent_id: input.parentId ?? null,
+        p_latitude: input.latitude ?? null,
+        p_longitude: input.longitude ?? null,
+      });
+      if (error) return fail(error, 'No se pudo registrar la zona');
+      return ok(dbRowToPublic(data as EmergencyZoneDbRow) as EmergencyZonePublic);
+    } catch (error) {
+      return fail(error, 'No se pudo registrar la zona');
+    }
+  },
+
   async getEmergencyZoneById(id: string): Promise<ServiceResponse<EmergencyZone | null>> {
     if (isMockMode()) {
       const found = EMERGENCY_ZONE_TREE.find((z) => z.id === id);

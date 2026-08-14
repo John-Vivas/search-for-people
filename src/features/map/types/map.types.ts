@@ -110,6 +110,7 @@ export interface MapViewProps {
   onFiltersChange: (filters: Partial<MapFilter>) => void;
   onViewLocationDetail?: (location: MapLocation) => void;
   onViewZoneRecords?: (zoneId: string) => void;
+  onOpenRegister?: () => void;
 }
 
 export interface MapProviderConfig {
