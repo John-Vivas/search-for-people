@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PersonItem } from '@/src/features/persons/types/person';
 import { PersonCard } from '@/src/features/persons/components/PersonCard';
+import { FEATURES } from '@/src/lib/featureFlags';
 
 interface HomeViewProps {
   items: PersonItem[];
@@ -129,7 +130,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
           </button>
         </div>
 
-        {/* Aid coordination CTA → /ayuda */}
+        {/* Aid coordination CTA → /ayuda (hidden while the feature is off) */}
+        {FEATURES.aid && (
         <div className="mt-4">
           <button
             onClick={() => onNavigate('ayuda')}
@@ -147,6 +149,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
             <span className="material-symbols-outlined shrink-0">arrow_forward</span>
           </button>
         </div>
+        )}
       </section>
 
       {/* Quick Stats Bar */}

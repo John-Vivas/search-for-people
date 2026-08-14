@@ -1,4 +1,5 @@
 import React from 'react';
+import { FEATURES } from '@/src/lib/featureFlags';
 
 interface BottomNavBarProps {
   currentTab: string;
@@ -8,7 +9,7 @@ interface BottomNavBarProps {
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onNavigate }) => {
   return (
     <nav className="fixed bottom-0 left-0 w-full z-50 bg-white border-t border-[#e1e3e4] md:hidden shadow-lg">
-      <div className="grid grid-cols-5 h-16">
+      <div className={`grid ${FEATURES.aid ? 'grid-cols-5' : 'grid-cols-4'} h-16`}>
         <button
           onClick={() => onNavigate('home')}
           className={`flex flex-col items-center justify-center gap-1 transition-colors ${
@@ -64,20 +65,22 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onNaviga
           <span className="text-[10px]">Mapa</span>
         </button>
 
-        <button
-          onClick={() => onNavigate('ayuda')}
-          className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-            currentTab === 'ayuda' ? 'text-[#00685d] font-bold' : 'text-[#6d7a77]'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-[22px]"
-            data-weight={currentTab === 'ayuda' ? 'fill' : 'normal'}
+        {FEATURES.aid && (
+          <button
+            onClick={() => onNavigate('ayuda')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              currentTab === 'ayuda' ? 'text-[#00685d] font-bold' : 'text-[#6d7a77]'
+            }`}
           >
-            volunteer_activism
-          </span>
-          <span className="text-[10px]">Ayuda</span>
-        </button>
+            <span
+              className="material-symbols-outlined text-[22px]"
+              data-weight={currentTab === 'ayuda' ? 'fill' : 'normal'}
+            >
+              volunteer_activism
+            </span>
+            <span className="text-[10px]">Ayuda</span>
+          </button>
+        )}
       </div>
     </nav>
   );
