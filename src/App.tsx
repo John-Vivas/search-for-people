@@ -49,7 +49,7 @@ const AdminReportDetailView = lazy(() =>
 
 /** Map the current URL to the tab id the nav bars use for their active state. */
 function pathToTab(pathname: string): string {
-  if (pathname === '/') return 'home';
+  if (pathname === '/' || pathname.startsWith('/inicio')) return 'home';
   if (pathname.startsWith('/buscar')) return 'buscar';
   if (pathname.startsWith('/encontrados')) return 'encontrados';
   if (pathname.startsWith('/desaparecidos')) return 'desaparecidos';
@@ -65,7 +65,7 @@ function pathToTab(pathname: string): string {
 
 function tabToPath(tab: string): string {
   switch (tab) {
-    case 'home': return '/';
+    case 'home': return '/inicio';
     case 'buscar': return '/buscar';
     case 'encontrados': return '/encontrados';
     case 'desaparecidos': return '/desaparecidos';
@@ -246,8 +246,9 @@ export function App() {
       <main className="flex-1 mt-[64px] md:mt-[72px]">
         <Suspense fallback={<ListLoadingState message="Cargando…" />}>
           <Routes>
+            <Route path="/" element={<Navigate to="/inicio" replace />} />
             <Route
-              path="/"
+              path="/inicio"
               element={renderPersonContent(
                 <HomeView items={items} onNavigate={handleNavigate} onSelectPerson={handleSelectPerson} />
               )}
@@ -298,7 +299,7 @@ export function App() {
               element={
                 <ReportFlowView
                   onReportSubmitted={handleReportSubmitted}
-                  onNavigateHome={() => navigate('/')}
+                  onNavigateHome={() => navigate('/inicio')}
                   onNavigateSearch={() => navigate('/buscar')}
                 />
               }
@@ -321,7 +322,7 @@ export function App() {
                 <AdminReportRoute reports={adminReports} onUpdateStatus={updateReportStatus} />
               )}
             />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/inicio" replace />} />
           </Routes>
         </Suspense>
       </main>
