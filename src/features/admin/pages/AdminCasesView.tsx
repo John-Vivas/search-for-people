@@ -90,17 +90,15 @@ export const AdminCasesView: React.FC<AdminCasesViewProps> = ({ items, onMarkSta
                     onClick={() => mark(item, 'FOUND', isPet ? 'encontrada' : 'encontrado')}
                     className="h-9 px-3 rounded-lg bg-[#00685d] text-white text-xs font-bold hover:bg-[#008376] transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    {busy ? '…' : 'Encontrado'}
+                    {busy ? '…' : isPet ? 'Encontrada' : 'Encontrado'}
                   </button>
-                  {!isPet && (
-                    <button
-                      disabled={busy}
-                      onClick={() => mark(item, 'REUNITED', 'reunido')}
-                      className="h-9 px-3 rounded-lg border border-[#00685d] text-[#00685d] text-xs font-bold hover:bg-[#f4fffb] transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Reunido
-                    </button>
-                  )}
+                  <button
+                    disabled={busy}
+                    onClick={() => mark(item, 'REUNITED', isPet ? 'reunida' : 'reunido')}
+                    className="h-9 px-3 rounded-lg border border-[#00685d] text-[#00685d] text-xs font-bold hover:bg-[#f4fffb] transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isPet ? 'Reunida' : 'Reunido'}
+                  </button>
                 </div>
               </li>
             );
