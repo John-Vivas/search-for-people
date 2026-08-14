@@ -7,6 +7,7 @@ interface MapFiltersProps {
   zones: EmergencyZone[];
   onChange: (partial: Partial<MapFilter>) => void;
   compact?: boolean;
+  onRegister?: () => void;
 }
 
 export const MapFilters: React.FC<MapFiltersProps> = ({
@@ -14,6 +15,7 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
   zones,
   onChange,
   compact = false,
+  onRegister,
 }) => {
   const selectClass =
     'w-full min-h-[44px] px-3 py-2 rounded-xl border border-[#e1e3e4] bg-white text-sm text-[#191c1d] font-medium focus:outline-none focus:ring-2 focus:ring-[#008376]/30 cursor-pointer';
@@ -139,6 +141,21 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
           <p className="text-[10px] text-[#6d7a77] mt-1">Estado aplica solo a personas</p>
         )}
       </div>
+
+      {onRegister && (
+        <div className="pt-3 border-t border-[#e1e3e4]">
+          <p className="text-[11px] text-[#6d7a77] mb-2">
+            ¿No encuentras tu departamento, ciudad o municipio?
+          </p>
+          <button
+            onClick={onRegister}
+            className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border-2 border-[#00685d] text-[#00685d] font-bold text-sm hover:bg-[#f4fffb] transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
+            Registrar un lugar
+          </button>
+        </div>
+      )}
     </div>
   );
 };
