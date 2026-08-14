@@ -7,6 +7,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   alt: string;
   width?: number;
   height?: number;
+  /** Cloudinary crop mode: 'fill' recorta al encuadre, 'fit' muestra completa. */
+  crop?: string;
   fallbackType?: 'person' | 'pet' | 'generic';
   className?: string;
 }
@@ -16,6 +18,7 @@ export function OptimizedImage({
   alt,
   width,
   height,
+  crop,
   fallbackType = 'generic',
   className = '',
   loading = 'lazy',
@@ -23,7 +26,7 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
 
-  const optimizedSrc = src ? getOptimizedImageUrl(src, { width, height }) : null;
+  const optimizedSrc = src ? getOptimizedImageUrl(src, { width, height, crop }) : null;
 
   if (!optimizedSrc || hasError) {
     return (
