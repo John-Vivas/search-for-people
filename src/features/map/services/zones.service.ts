@@ -97,37 +97,32 @@ async function fetchFlatZoneRows(
 async function fetchZoneRows(
   activeOnly: boolean
 ): Promise<ServiceResponse<{ rows: EmergencyZoneDbRow[]; hierarchical: boolean }>> {
-  if (cachedZoneSchema === 'hierarchical') {
+  // Prefer the hierarchical schema (the current one in prod). Trying it FIRST
+  // means the common case costs a single request. Only fall back to the flat
+  // query when the hierarchical columns are actually missing (older DB), which
+  // we cache so we don't pay the failed hierarchical request again.
+  if (cachedZoneSchema !== 'flat') {
     const hierResult = await fetchHierarchicalZoneRows(activeOnly);
     if (!hierResult.error && hierResult.data) {
+      cachedZoneSchema = 'hierarchical';
       const rows = hierResult.data;
       return ok({
         rows,
         hierarchical: hasHierarchicalSchema(rows) || rows.some((r) => r.type != null),
       });
     }
-    // Fallback to flat if hierarchical query failed
-    cachedZoneSchema = 'flat';
+    // Missing columns → this DB uses the flat schema; remember it. Any other
+    // error is likely transient, so don't downgrade permanently.
+    if (isPostgrestMissingColumnError(hierResult.error)) {
+      cachedZoneSchema = 'flat';
+    } else {
+      return fail(hierResult.error, 'No se pudieron cargar las zonas de emergencia');
+    }
   }
 
-  // Query flat columns (supported on both flat and hierarchical schema without 400 errors)
   const flatResult = await fetchFlatZoneRows(activeOnly);
   if (flatResult.error || !flatResult.data) {
     return fail(flatResult.error, 'No se pudieron cargar las zonas de emergencia');
-  }
-
-  // If schema state is unknown, try hierarchical query once to check if migration 20250813000000 was applied
-  if (cachedZoneSchema === null) {
-    const hierTest = await fetchHierarchicalZoneRows(activeOnly);
-    if (!hierTest.error && hierTest.data && hierTest.data.length > 0) {
-      cachedZoneSchema = 'hierarchical';
-      const rows = hierTest.data;
-      return ok({
-        rows,
-        hierarchical: hasHierarchicalSchema(rows) || rows.some((r) => r.type != null),
-      });
-    }
-    cachedZoneSchema = 'flat';
   }
 
   return ok({ rows: flatResult.data, hierarchical: false });
