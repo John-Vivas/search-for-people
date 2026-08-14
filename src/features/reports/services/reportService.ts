@@ -24,6 +24,7 @@ import {
   type ZoneInfo,
 } from '@/src/features/persons/mappers/person.mapper';
 import { geocodeAddress } from '@/src/services/geocoding/geocoding.service';
+import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
 
 export interface ReportSubmissionResult {
   adminReport: AdminReportItem;
@@ -301,6 +302,10 @@ export const reportService = {
             : rpcError.message || 'Error al ejecutar RPC submit_community_report';
         return fail(rpcError, msg);
       }
+
+      // A new location may have been created; drop the enrichment cache so the
+      // next catalog load resolves the new case's location.
+      invalidateEnrichmentContext();
 
       const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
       const reportId = rpcResult?.report_id || `rep-${Date.now()}`;
