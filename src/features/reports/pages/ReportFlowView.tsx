@@ -713,7 +713,9 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
       )}
 
       {/* Duplicate warning modal */}
-      {duplicateMatches.length > 0 && (
+      {duplicateMatches.length > 0 && (() => {
+        const strong = duplicateMatches.some((m) => m.nameExact && m.locationMatch);
+        return (
         <div
           className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
           role="dialog"
@@ -725,12 +727,26 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-[#e1e3e4] flex items-start gap-2">
-              <span className="material-symbols-outlined text-[#8e5a00] mt-0.5">warning</span>
+            <div
+              className={`px-5 py-4 border-b border-[#e1e3e4] flex items-start gap-2 ${
+                strong ? 'bg-[#ffdad6]' : 'bg-[#fff8e1]'
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined mt-0.5 ${
+                  strong ? 'text-[#ba1a1a]' : 'text-[#8e5a00]'
+                }`}
+              >
+                {strong ? 'error' : 'warning'}
+              </span>
               <div>
-                <h3 className="text-base font-bold text-[#191c1d]">Posible duplicado</h3>
-                <p className="text-xs text-[#6d7a77]">
-                  Ya existen registros parecidos en esta ciudad. Revisa si es alguno de estos antes de crear uno nuevo.
+                <h3 className="text-base font-bold text-[#191c1d]">
+                  {strong ? '¿Es la misma persona?' : 'Posible duplicado'}
+                </h3>
+                <p className="text-xs text-[#3d4947]">
+                  {strong
+                    ? 'Ojo: esta persona tiene el mismo nombre y lugar que un reporte existente. ¿Será la misma persona? Revisá antes de crear otro.'
+                    : 'Ya existen registros con un nombre parecido. Revisa si es alguno de estos antes de crear uno nuevo.'}
                 </p>
               </div>
             </div>
@@ -738,7 +754,22 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
             <ul className="p-4 space-y-2">
               {duplicateMatches.map((m) => (
                 <li key={m.id} className="border border-[#e1e3e4] rounded-xl px-3 py-2">
-                  <p className="text-sm font-bold text-[#191c1d]">{m.title}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-[#191c1d] truncate">{m.title}</p>
+                    {m.nameExact && m.locationMatch ? (
+                      <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ffdad6] text-[#ba1a1a]">
+                        Mismo nombre y lugar
+                      </span>
+                    ) : m.nameExact ? (
+                      <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fff8e1] text-[#8e5a00]">
+                        Mismo nombre
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eef1f0] text-[#5c6462]">
+                        Parecido
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#6d7a77]">{m.subtitle}</p>
                 </li>
               ))}
@@ -756,12 +787,13 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
                 disabled={submitting}
                 className="flex-1 h-11 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
               >
-                Es nuevo, continuar
+                Es otra persona, continuar
               </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

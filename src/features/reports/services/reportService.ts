@@ -181,6 +181,10 @@ export interface DuplicateMatch {
   id: string;
   title: string;
   subtitle: string;
+  /** El nombre coincide EXACTO con el registro existente. */
+  nameExact: boolean;
+  /** Además está en la misma ciudad/zona → coincidencia más fuerte. */
+  locationMatch: boolean;
 }
 
 const PERSON_STATUS_LABEL: Record<string, string> = {
@@ -201,28 +205,46 @@ async function findSimilarRecords(form: ReportForm): Promise<DuplicateMatch[]> {
   const name = form.subjectName?.trim();
   if (!name || name.length < 3) return [];
   const zoneId = form.locationCityZoneId ?? undefined;
+  const target = name.toLowerCase();
+
+  // Coincidencias fuertes (mismo nombre + lugar) primero, luego nombre exacto,
+  // luego parecidos.
+  const rank = (m: DuplicateMatch) =>
+    m.nameExact && m.locationMatch ? 0 : m.nameExact ? 1 : 2;
 
   try {
+    // Buscamos por nombre SIN filtrar por zona, para detectar también el mismo
+    // nombre en otra ciudad (alerta más débil). El lugar se evalúa por resultado.
     if (form.itemType === 'mascota') {
-      const res = await petsService.searchPets({ query: name, zoneId, limit: 5 });
-      return (res.data ?? []).map((p) => ({
-        id: p.id,
-        title: p.name ?? 'Mascota',
-        subtitle: [p.species, p.breed, p.color].filter(Boolean).join(' · ') || 'Mascota',
-      }));
+      const res = await petsService.searchPets({ query: name, limit: 8 });
+      return (res.data ?? [])
+        .map((p) => ({
+          id: p.id,
+          title: p.name ?? 'Mascota',
+          subtitle: [p.species, p.breed, p.color].filter(Boolean).join(' · ') || 'Mascota',
+          nameExact: (p.name ?? '').trim().toLowerCase() === target,
+          locationMatch: !!zoneId && p.zone_id === zoneId,
+        }))
+        .sort((a, b) => rank(a) - rank(b))
+        .slice(0, 5);
     }
 
-    const res = await personsService.searchPersons({ query: name, zoneId, limit: 5 });
-    return (res.data ?? []).map((p) => ({
-      id: p.id,
-      title: p.full_name ?? 'Sin nombre',
-      subtitle: [
-        PERSON_STATUS_LABEL[p.status] ?? p.status,
-        p.approximate_age != null ? `${p.approximate_age} años` : null,
-      ]
-        .filter(Boolean)
-        .join(' · '),
-    }));
+    const res = await personsService.searchPersons({ query: name, limit: 8 });
+    return (res.data ?? [])
+      .map((p) => ({
+        id: p.id,
+        title: p.full_name ?? 'Sin nombre',
+        subtitle: [
+          PERSON_STATUS_LABEL[p.status] ?? p.status,
+          p.approximate_age != null ? `${p.approximate_age} años` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        nameExact: (p.full_name ?? '').trim().toLowerCase() === target,
+        locationMatch: !!zoneId && p.zone_id === zoneId,
+      }))
+      .sort((a, b) => rank(a) - rank(b))
+      .slice(0, 5);
   } catch {
     return [];
   }
