@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   compressImage,
   uploadToCloudinary,
+  uploadRemoteToCloudinary,
 } from '@/src/services/cloudinary/cloudinary.service';
 import type { ProcessedUploadItem } from '@/src/services/cloudinary/cloudinary.types';
 
@@ -26,6 +27,8 @@ export function useImageUpload(options?: UseImageUploadOptions) {
     item: ProcessedUploadItem,
     folderPath: string
   ) => {
+    if (!item.file) return; // items desde enlace no pasan por compresión
+    const sourceFile = item.file;
     // 1. Compression phase
     setItems((prev) =>
       prev.map((i) =>
@@ -34,7 +37,7 @@ export function useImageUpload(options?: UseImageUploadOptions) {
     );
 
     try {
-      const compressed = await compressImage(item.file);
+      const compressed = await compressImage(sourceFile);
 
       // 2. Upload phase
       setItems((prev) =>
@@ -178,6 +181,81 @@ export function useImageUpload(options?: UseImageUploadOptions) {
     [items.length, maxImages, folderCategory, options?.entityId]
   );
 
+  const addFromLink = useCallback(
+    async (rawUrl: string) => {
+      setGlobalError(null);
+      const url = rawUrl.trim();
+      if (!url) return;
+
+      if (items.length >= maxImages) {
+        setGlobalError(`Solo se permite un máximo de ${maxImages} fotografías por registro.`);
+        return;
+      }
+
+      const id = `link-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const isPrimary = items.length === 0;
+      const newItem: ProcessedUploadItem = {
+        id,
+        previewUrl: '',
+        status: 'uploading',
+        progress: 30,
+        isPrimary,
+        sourceUrl: url,
+      };
+      setItems((prev) => [...prev, newItem]);
+
+      const setItemError = (message: string) =>
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === id ? { ...i, status: 'error', progress: 0, errorMessage: message } : i
+          )
+        );
+
+      try {
+        // 1. Leer la foto de portada del enlace (serverless, sin CORS).
+        const res = await fetch(`/api/unfurl?url=${encodeURIComponent(url)}`);
+        const data = (await res.json().catch(() => null)) as
+          | { image?: string; error?: string }
+          | null;
+
+        if (!res.ok || !data?.image) {
+          setItemError(data?.error || 'No se pudo leer la imagen del enlace.');
+          return;
+        }
+
+        // 2. Guardar en Cloudinary (durable, no depende del CDN de la red).
+        const folderPath = `estamos-buscando/${folderCategory}/${options?.entityId || 'draft'}`;
+        const upload = await uploadRemoteToCloudinary(data.image, { folder: folderPath });
+
+        if (upload.error || !upload.data) {
+          setItemError(upload.error?.message || 'No se pudo guardar la imagen del enlace.');
+          return;
+        }
+
+        const { secure_url, public_id } = upload.data;
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === id
+              ? {
+                  ...i,
+                  status: 'success',
+                  progress: 100,
+                  cloudinaryUrl: secure_url,
+                  cloudinaryPublicId: public_id,
+                  previewUrl: secure_url,
+                }
+              : i
+          )
+        );
+      } catch (err) {
+        setItemError(
+          err instanceof Error ? err.message : 'No se pudo procesar el enlace.'
+        );
+      }
+    },
+    [items.length, maxImages, folderCategory, options?.entityId]
+  );
+
   const removeImage = useCallback((id: string) => {
     setItems((prev) => {
       const filtered = prev.filter((item) => item.id !== id);
@@ -239,6 +317,7 @@ export function useImageUpload(options?: UseImageUploadOptions) {
     primaryUrl,
     globalError,
     addFiles,
+    addFromLink,
     removeImage,
     retryUpload,
     setPrimaryImage,

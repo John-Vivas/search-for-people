@@ -187,6 +187,48 @@ export async function uploadToCloudinary(
 }
 
 /**
+ * Sube una imagen a Cloudinary DESDE UNA URL remota (Cloudinary la descarga y
+ * la guarda). Se usa para el modo "pegar link": así la foto queda alojada en
+ * Cloudinary de forma durable y no depende del CDN de la red social (que expira).
+ */
+export async function uploadRemoteToCloudinary(
+  imageUrl: string,
+  options?: CloudinaryUploadOptions
+): Promise<ServiceResponse<CloudinaryUploadResponse>> {
+  const { cloudName, uploadPreset } = getCloudinaryConfig();
+
+  if (!cloudName || !uploadPreset) {
+    return fail(
+      new Error('Cloudinary not configured'),
+      'Cloudinary no está configurado.'
+    );
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', imageUrl); // Cloudinary acepta una URL remota como file
+    formData.append('upload_preset', uploadPreset);
+    if (options?.folder) formData.append('folder', options.folder);
+    if (options?.tags?.length) formData.append('tags', options.tags.join(','));
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+    const response = await fetch(endpoint, { method: 'POST', body: formData });
+
+    if (!response.ok) {
+      return fail(
+        new Error(`Cloudinary remote upload failed: ${response.status}`),
+        'No se pudo guardar la imagen del enlace. Probá subir la foto.'
+      );
+    }
+
+    const result: CloudinaryUploadResponse = await response.json();
+    return ok(result);
+  } catch (error) {
+    return fail(error, 'Error al guardar la imagen del enlace.');
+  }
+}
+
+/**
  * Generate transformed Cloudinary URL (f_auto, q_auto, responsive sizes).
  */
 export function getOptimizedImageUrl(
