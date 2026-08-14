@@ -34,7 +34,8 @@ export interface CompressedImageResult {
 
 export interface ProcessedUploadItem {
   id: string;
-  file: File;
+  /** Archivo local (modo "subir foto"). Ausente en items desde enlace. */
+  file?: File;
   previewUrl: string;
   status: 'idle' | 'compressing' | 'uploading' | 'success' | 'error';
   progress: number;
@@ -42,4 +43,6 @@ export interface ProcessedUploadItem {
   cloudinaryPublicId?: string;
   errorMessage?: string;
   isPrimary?: boolean;
+  /** URL de la publicación (modo "pegar link"). */
+  sourceUrl?: string;
 }

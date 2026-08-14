@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Upload,
   X,
@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Star,
-  Image as ImageIcon,
+  Link as LinkIcon,
 } from 'lucide-react';
 import type { ProcessedUploadItem } from '@/src/services/cloudinary/cloudinary.types';
 
@@ -16,6 +16,7 @@ interface ImageUploaderProps {
   maxImages?: number;
   globalError?: string | null;
   onAddFiles: (files: FileList | File[]) => void;
+  onAddLink?: (url: string) => void;
   onRemoveImage: (id: string) => void;
   onRetryUpload: (id: string) => void;
   onSetPrimaryImage?: (id: string) => void;
@@ -29,6 +30,7 @@ export function ImageUploader({
   maxImages = 3,
   globalError,
   onAddFiles,
+  onAddLink,
   onRemoveImage,
   onRetryUpload,
   onSetPrimaryImage,
@@ -36,6 +38,15 @@ export function ImageUploader({
   helperText = 'Puedes adjuntar hasta 3 fotografías (JPG, PNG, WEBP). Se optimizarán automáticamente.',
 }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<'upload' | 'link'>('upload');
+  const [linkValue, setLinkValue] = useState('');
+
+  const submitLink = () => {
+    const url = linkValue.trim();
+    if (!url || !onAddLink) return;
+    onAddLink(url);
+    setLinkValue('');
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -86,6 +97,60 @@ export function ImageUploader({
         <div className="p-3 bg-[#ffdad6] border border-[#ffb4ab] rounded-xl text-xs text-[#410002] flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-[#ba1a1a] shrink-0 mt-0.5" />
           <span>{globalError}</span>
+        </div>
+      )}
+
+      {onAddLink && (
+        <div className="flex gap-1 p-1 bg-[#f0f2f1] rounded-xl">
+          <button
+            type="button"
+            onClick={() => setMode('upload')}
+            className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+              mode === 'upload' ? 'bg-white text-[#00685d] shadow-sm' : 'text-[#5c6462]'
+            }`}
+          >
+            <Upload className="w-4 h-4" /> Subir foto
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('link')}
+            className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+              mode === 'link' ? 'bg-white text-[#00685d] shadow-sm' : 'text-[#5c6462]'
+            }`}
+          >
+            <LinkIcon className="w-4 h-4" /> Pegar link
+          </button>
+        </div>
+      )}
+
+      {mode === 'link' && onAddLink && canAddMore && (
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={linkValue}
+              onChange={(e) => setLinkValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitLink();
+                }
+              }}
+              placeholder="Pega el link de Instagram, Facebook o TikTok"
+              className="flex-1 h-11 px-3 rounded-xl border border-[#c1c8c5] text-sm focus:outline-none focus:border-[#00685d] focus:ring-1 focus:ring-[#00685d]"
+            />
+            <button
+              type="button"
+              onClick={submitLink}
+              disabled={!linkValue.trim()}
+              className="h-11 px-4 rounded-xl bg-[#00685d] text-white text-sm font-bold hover:bg-[#008376] transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Agregar
+            </button>
+          </div>
+          <p className="text-[11px] text-[#6d7a77]">
+            Tomamos la foto de portada de la publicación (debe ser pública). Si no tiene link, usá "Subir foto".
+          </p>
         </div>
       )}
 
@@ -183,16 +248,21 @@ export function ImageUploader({
 
             {/* Bottom info */}
             <div className="p-2 text-[11px] text-[#5c6462] truncate bg-white flex items-center justify-between border-t border-[#f0f2f1]">
-              <span className="truncate max-w-[75%]">{item.file.name}</span>
-              <span className="text-[10px] font-mono text-[#8c9491]">
-                {(item.file.size / 1024).toFixed(0)} KB
+              <span className="truncate max-w-[75%] flex items-center gap-1">
+                {!item.file && <LinkIcon className="w-3 h-3 shrink-0 text-[#00685d]" />}
+                {item.file ? item.file.name : 'Desde enlace'}
               </span>
+              {item.file && (
+                <span className="text-[10px] font-mono text-[#8c9491]">
+                  {(item.file.size / 1024).toFixed(0)} KB
+                </span>
+              )}
             </div>
           </div>
         ))}
 
         {/* Add More Dropzone Card */}
-        {canAddMore && (
+        {canAddMore && mode === 'upload' && (
           <div
             onClick={() => fileInputRef.current?.click()}
             onDrop={handleDrop}

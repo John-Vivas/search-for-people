@@ -90,6 +90,7 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
     primaryUrl,
     globalError: imageGlobalError,
     addFiles: onAddFiles,
+    addFromLink: onAddLink,
     removeImage: onRemoveImage,
     retryUpload: onRetryUpload,
     setPrimaryImage: onSetPrimaryImage,
@@ -479,11 +480,12 @@ export const ReportFlowView: React.FC<ReportFlowViewProps> = ({
               maxImages={3}
               globalError={imageGlobalError}
               onAddFiles={onAddFiles}
+              onAddLink={onAddLink}
               onRemoveImage={onRemoveImage}
               onRetryUpload={onRetryUpload}
               onSetPrimaryImage={onSetPrimaryImage}
               label="Fotografías del caso"
-              helperText="Adjunta hasta 3 fotos (JPG, PNG, WEBP). Se optimizan automáticamente antes de subir."
+              helperText="Subí hasta 3 fotos (se optimizan solas) o pegá el link de una publicación pública de Instagram, Facebook o TikTok."
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
