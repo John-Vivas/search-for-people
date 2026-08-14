@@ -37,3 +37,15 @@ export function toTitleCase(input: string | null | undefined): string {
     .map((word, i) => capitalizeWord(word, i === 0))
     .join(' ');
 }
+
+/**
+ * Sentence case: solo la primera letra en mayúscula, el resto tal cual.
+ * Para texto libre (descripciones, detalles) donde title-case arruinaría las
+ * frases: "numero:313..." → "Numero:313...", "vestía azul" → "Vestía azul".
+ * Devuelve '' si está vacío.
+ */
+export function capitalizeFirst(input: string | null | undefined): string {
+  const text = (input ?? '').trim();
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}

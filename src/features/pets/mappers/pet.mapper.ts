@@ -4,7 +4,7 @@ import type {
   PersonEnrichmentContext,
   ZoneInfo,
 } from '@/src/features/persons/mappers/person.mapper';
-import { toTitleCase } from '@/src/lib/formatText';
+import { toTitleCase, capitalizeFirst } from '@/src/lib/formatText';
 
 /** DB pet row fields used by the mapper */
 export interface PetMappableRow {
@@ -137,10 +137,10 @@ export function mapPetToItem(
 ): PersonItem {
   const zone = row.zone_id ? ctx.zonesById.get(row.zone_id) : undefined;
   const details = [
-    row.species,
-    row.breed,
-    row.color,
-    row.description,
+    toTitleCase(row.species),
+    toTitleCase(row.breed),
+    toTitleCase(row.color),
+    capitalizeFirst(row.description),
   ]
     .filter(Boolean)
     .join(' • ');
@@ -167,9 +167,9 @@ export function mapPetToItem(
     updatedAt: formatRelativeUpdatedAt(row.updated_at),
     lastSeenDate: formatDisplayDate(row.last_seen_at ?? row.updated_at),
     verified: row.is_verified,
-    description: row.description ?? undefined,
+    description: capitalizeFirst(row.description) || undefined,
     additionalDetails: details || undefined,
-    distinctiveFeatures: row.color ? `Color: ${row.color}` : undefined,
+    distinctiveFeatures: row.color ? `Color: ${toTitleCase(row.color)}` : undefined,
   };
 }
 

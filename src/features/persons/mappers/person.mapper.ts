@@ -1,6 +1,6 @@
 import type { PersonStatus } from '@/src/features/persons/types/person.db';
 import type { ItemType, PersonItem } from '@/src/features/persons/types/person';
-import { toTitleCase } from '@/src/lib/formatText';
+import { toTitleCase, capitalizeFirst } from '@/src/lib/formatText';
 
 /** Context for mapping DB rows → UI PersonItem (zones + optional locations) */
 export interface ZoneInfo {
@@ -200,12 +200,12 @@ export function mapPersonToItem(
     updatedAt: formatRelativeUpdatedAt(row.updated_at),
     lastSeenDate: formatDisplayDate(row.last_seen_at ?? row.updated_at),
     verified: row.is_verified,
-    description: row.description ?? undefined,
-    physique: row.physical_description ?? undefined,
-    clothing: row.clothing_description ?? undefined,
-    additionalDetails: row.description ?? undefined,
-    distinctiveFeatures: row.distinguishing_features ?? undefined,
-    tattoo: row.distinguishing_features ?? undefined,
+    description: capitalizeFirst(row.description) || undefined,
+    physique: capitalizeFirst(row.physical_description) || undefined,
+    clothing: capitalizeFirst(row.clothing_description) || undefined,
+    additionalDetails: capitalizeFirst(row.description) || undefined,
+    distinctiveFeatures: capitalizeFirst(row.distinguishing_features) || undefined,
+    tattoo: capitalizeFirst(row.distinguishing_features) || undefined,
   };
 }
 
