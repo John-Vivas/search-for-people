@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 
 /**
- * Protege el panel de moderación con una clave simple (VITE_ADMIN_PIN).
+ * Protege el panel de moderación con una clave simple.
  * Provisional hasta el login real (Fase 8): NO es seguridad fuerte — un PIN en
- * el front solo controla la UI, no el acceso a la BD. Si VITE_ADMIN_PIN no está
- * configurada, el panel queda abierto (como hoy).
+ * el front solo controla la UI (queda visible en el bundle), no el acceso a la
+ * BD. Cambiá la clave seteando VITE_ADMIN_PIN en Vercel; si no, usa el default.
  */
-const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN ?? '').toString();
+const DEFAULT_PIN = 'alertavivo2026';
+const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN || DEFAULT_PIN).toString();
 const SESSION_KEY = 'estamos_buscando_admin_ok';
 
 export const AdminGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
