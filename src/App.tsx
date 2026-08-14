@@ -16,6 +16,7 @@ import { usePersons } from '@/src/features/persons/hooks/usePersons';
 import { useAdminReports } from '@/src/features/admin/hooks/useAdminReports';
 import { AdminGate } from '@/src/features/admin/components/AdminGate';
 import { AdminCasesView } from '@/src/features/admin/pages/AdminCasesView';
+import { AdminDashboardView } from '@/src/features/admin/pages/AdminDashboardView';
 import { setCaseStatus } from '@/src/features/admin/services/casesService';
 import type { ReportSubmissionResult } from '@/src/features/reports/services/reportService';
 import {
@@ -329,12 +330,13 @@ export function App() {
               path="/admin"
               element={
                 <AdminGate>
-                  {renderAdminContent(
-                    <AdminOverviewView
-                      adminReports={adminReports}
-                      onSelectAdminReport={(report) => navigate(`/admin/${report.id}`)}
-                      onApproveReport={approveReport}
-                      onRejectReport={rejectReport}
+                  {renderPersonContent(
+                    <AdminDashboardView
+                      items={items}
+                      reportsPending={
+                        adminError ? null : adminReports.filter((r) => r.status === 'pending').length
+                      }
+                      onOpenCases={() => navigate('/admin/casos')}
                     />
                   )}
                 </AdminGate>
