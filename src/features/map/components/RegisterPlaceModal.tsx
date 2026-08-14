@@ -120,6 +120,17 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
         if (geo) {
           lat = geo.latitude;
           lng = geo.longitude;
+        } else {
+          // Fallback: centroide del departamento (zona) o de la ciudad (centro),
+          // para que SIEMPRE quede ubicado en el mapa aunque sea aproximado.
+          const fallbackName = kind === 'zone' ? deptNode?.name : cityNode?.name;
+          if (fallbackName) {
+            const geoFb = await geocodeAddress({ city: fallbackName });
+            if (geoFb) {
+              lat = geoFb.latitude;
+              lng = geoFb.longitude;
+            }
+          }
         }
       }
 
