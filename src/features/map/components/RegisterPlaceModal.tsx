@@ -5,6 +5,7 @@ import { COLOMBIA_DEPARTMENTS } from '@/src/features/map/data/colombiaDepartment
 import { zonesService } from '@/src/features/map/services/zones.service';
 import { facilitiesService } from '@/src/features/map/services/facilities.service';
 import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { invalidateMapData } from '@/src/features/map/services/mapService';
 import { geocodeAddress } from '@/src/services/geocoding/geocoding.service';
 
 type Kind = 'zone' | 'facility' | 'collection';
@@ -151,6 +152,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
       }
 
       invalidateEnrichmentContext();
+      invalidateMapData();
       reset();
       onRegistered();
       onClose();

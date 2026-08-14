@@ -12,9 +12,8 @@ import { mockApiCall, ok, fail, ServiceResponse } from '@/src/services/api/error
 import { zonesService } from '@/src/features/map/services/zones.service';
 import { locationMatchesZoneFilter } from '@/src/features/map/utils/zoneTree';
 import { resolveZoneId as mapLegacyZoneId } from '@/src/features/map/utils/zoneMappers';
-import { personsService } from '@/src/features/persons/services/persons.service';
-import { petsService } from '@/src/features/pets/services/pets.service';
 import { facilitiesService } from '@/src/features/map/services/facilities.service';
+import { loadCatalogRecords } from '@/src/lib/catalogRows';
 import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
 import {
   personRecordToMapLocation,
@@ -23,6 +22,17 @@ import {
 } from '@/src/features/map/mappers/mapLocation.mapper';
 
 const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms));
+
+type MapData = { zones: EmergencyZone[]; locations: MapLocation[] };
+const MAP_TTL_MS = 60 * 1000; // caché corta: evita refetch en re-renders / re-navegación
+let mapDataCache: { data: MapData; at: number } | null = null;
+let mapDataInflight: Promise<ServiceResponse<MapData>> | null = null;
+
+/** Descarta la caché del mapa (p. ej. tras registrar una zona/centro). */
+export function invalidateMapData(): void {
+  mapDataCache = null;
+  mapDataInflight = null;
+}
 
 async function loadZones(): Promise<ServiceResponse<EmergencyZone[]>> {
   if (isMockMode()) {
@@ -45,18 +55,18 @@ async function loadLocations(_zones: EmergencyZone[]): Promise<MapLocation[]> {
 
   // Datos reales: personas + mascotas → puntos del mapa. Comparte el contexto
   // de enriquecimiento (zonas + ubicaciones) con el catálogo (cacheado).
-  const [ctx, personsRes, petsRes, facilitiesRes] = await Promise.all([
+  // Personas + mascotas: filas compartidas con el catálogo (sin doble consulta).
+  const [ctx, records, facilitiesRes] = await Promise.all([
     loadEnrichmentContext(),
-    personsService.getPersons({ limit: 1000 }),
-    petsService.getPets({ limit: 1000 }),
+    loadCatalogRecords(),
     facilitiesService.getFacilities({ limit: 1000 }),
   ]);
 
-  const persons = (personsRes.data ?? [])
+  const persons = records.persons
     .map((row) => personRecordToMapLocation(row, ctx))
     .filter((l): l is Exclude<typeof l, null> => l !== null);
 
-  const pets = (petsRes.data ?? [])
+  const pets = records.pets
     .map((row) => petRecordToMapLocation(row, ctx))
     .filter((l): l is Exclude<typeof l, null> => l !== null);
 
@@ -156,16 +166,37 @@ export const mapService = {
     return ok(data);
   },
 
-  async getMapData(): Promise<
-    ServiceResponse<{ zones: EmergencyZone[]; locations: MapLocation[] }>
-  > {
-    const zonesRes = await loadZones();
-    if (zonesRes.error || !zonesRes.data) {
-      return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+  async getMapData(): Promise<ServiceResponse<MapData>> {
+    if (isMockMode()) {
+      const zonesRes = await loadZones();
+      if (zonesRes.error || !zonesRes.data) {
+        return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+      }
+      const locations = await loadLocations(zonesRes.data);
+      return ok({ zones: zonesRes.data, locations });
     }
 
-    const locations = await loadLocations(zonesRes.data);
-    return ok({ zones: zonesRes.data, locations });
+    // Caché corta + dedupe: re-renders o navegar y volver no vuelven a pegarle
+    // a Supabase. Se invalida al registrar (invalidateMapData).
+    if (mapDataCache && Date.now() - mapDataCache.at < MAP_TTL_MS) {
+      return ok(mapDataCache.data);
+    }
+    if (mapDataInflight) return mapDataInflight;
+
+    mapDataInflight = (async (): Promise<ServiceResponse<MapData>> => {
+      const zonesRes = await loadZones();
+      if (zonesRes.error || !zonesRes.data) {
+        return fail(zonesRes.error, 'No se pudieron cargar los datos del mapa');
+      }
+      const locations = await loadLocations(zonesRes.data);
+      const data: MapData = { zones: zonesRes.data, locations };
+      mapDataCache = { data, at: Date.now() };
+      return ok(data);
+    })().finally(() => {
+      mapDataInflight = null;
+    });
+
+    return mapDataInflight;
   },
 };
 

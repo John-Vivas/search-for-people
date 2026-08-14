@@ -3,6 +3,7 @@ import { INITIAL_ITEMS } from '@/src/data/mock/mockPersons';
 import { isMockMode } from '@/src/lib/dataSource';
 import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { loadCatalogRecords } from '@/src/lib/catalogRows';
 import { petsService } from '@/src/features/pets/services/pets.service';
 import { zonesService } from '@/src/features/map/services/zones.service';
 import {
@@ -37,12 +38,9 @@ export const petService = {
       return mockApiCall(getMockPets());
     }
 
-    const res = await petsService.searchPets({ limit: 100 });
-    if (res.error || !res.data) {
-      return fail(res.error, 'No se pudieron cargar las mascotas');
-    }
-
-    return ok(await mapRecordsToItems(res.data));
+    // Filas compartidas con el mapa (una sola consulta).
+    const { pets } = await loadCatalogRecords();
+    return ok(await mapRecordsToItems(pets));
   },
 
   async getPetById(id: string): Promise<ServiceResponse<PersonItem | null>> {
