@@ -7,11 +7,15 @@ interface EncontradosViewProps {
   onSelectPerson: (person: PersonItem) => void;
 }
 
-type FoundFilter = 'todos' | 'personas' | 'nn' | 'mascotas';
+type FoundFilter = 'todos' | 'personas' | 'mascotas';
 
-/** A record counts as "found" if it's a found/NN person or a found pet. */
+/**
+ * Un registro cuenta como "encontrado" si es una persona encontrada e
+ * identificada o una mascota encontrada. Los NN (sin identificar) NO se incluyen
+ * acá: viven solo en la vista "Personas NN" para no duplicarlos.
+ */
 function isFound(item: PersonItem): boolean {
-  return item.type === 'encontrado' || item.type === 'nn' || item.petStatus === 'FOUND';
+  return item.type === 'encontrado' || item.petStatus === 'FOUND';
 }
 
 export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelectPerson }) => {
@@ -23,7 +27,6 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
     () => ({
       todos: found.length,
       personas: found.filter((i) => i.type === 'encontrado').length,
-      nn: found.filter((i) => i.type === 'nn').length,
       mascotas: found.filter((i) => i.petStatus === 'FOUND').length,
     }),
     [found]
@@ -32,7 +35,6 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
   const encontrados = useMemo(() => {
     return found.filter((item) => {
       if (subFilter === 'personas') return item.type === 'encontrado';
-      if (subFilter === 'nn') return item.type === 'nn';
       if (subFilter === 'mascotas') return item.petStatus === 'FOUND';
       return true;
     });
@@ -53,7 +55,6 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
           {([
             { key: 'todos', label: 'Todos' },
             { key: 'personas', label: 'Personas' },
-            { key: 'nn', label: 'Sin identificar (NN)' },
             { key: 'mascotas', label: 'Mascotas' },
           ] as { key: FoundFilter; label: string }[]).map((f) => (
             <button
