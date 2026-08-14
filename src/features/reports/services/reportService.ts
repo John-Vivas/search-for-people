@@ -25,6 +25,8 @@ import {
 } from '@/src/features/persons/mappers/person.mapper';
 import { geocodeAddress } from '@/src/services/geocoding/geocoding.service';
 import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { invalidateCatalogRecords } from '@/src/lib/catalogRows';
+import { invalidateMapData } from '@/src/features/map/services/mapService';
 
 export interface ReportSubmissionResult {
   adminReport: AdminReportItem;
@@ -325,9 +327,11 @@ export const reportService = {
         return fail(rpcError, msg);
       }
 
-      // A new location may have been created; drop the enrichment cache so the
-      // next catalog load resolves the new case's location.
+      // Nuevo caso (y quizá nueva ubicación): descartar cachés para que el
+      // próximo load del catálogo/mapa muestre el reporte recién creado.
       invalidateEnrichmentContext();
+      invalidateCatalogRecords();
+      invalidateMapData();
 
       const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
       const reportId = rpcResult?.report_id || `rep-${Date.now()}`;

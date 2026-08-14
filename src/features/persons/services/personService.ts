@@ -3,6 +3,7 @@ import { INITIAL_ITEMS } from '@/src/data/mock/mockPersons';
 import { isMockMode } from '@/src/lib/dataSource';
 import { ok, fail, mockApiCall, ServiceResponse } from '@/src/services/api/errors';
 import { loadEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { loadCatalogRecords } from '@/src/lib/catalogRows';
 import { personsService } from '@/src/features/persons/services/persons.service';
 import { petService } from '@/src/features/pets/services/petService';
 import { zonesService } from '@/src/features/map/services/zones.service';
@@ -38,12 +39,9 @@ export const personService = {
       return mockApiCall(getMockPersonsOnly());
     }
 
-    const res = await personsService.searchPersons({ limit: 100 });
-    if (res.error || !res.data) {
-      return fail(res.error, 'No se pudieron cargar las personas');
-    }
-
-    return ok(await mapRecordsToItems(res.data));
+    // Filas compartidas con el mapa (una sola consulta).
+    const { persons } = await loadCatalogRecords();
+    return ok(await mapRecordsToItems(persons));
   },
 
   async getPersonById(id: string): Promise<ServiceResponse<PersonItem | null>> {
