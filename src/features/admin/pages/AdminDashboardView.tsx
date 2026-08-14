@@ -37,7 +37,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const cards = [
     { label: 'Desaparecidos', value: stats.desaparecidos, color: '#ba1a1a', icon: 'person_search' },
-    { label: 'Sin identificar (NN)', value: stats.nn, color: '#8e711f', icon: 'help_center' },
+    { label: 'Sin identificar', value: stats.nn, color: '#8e711f', icon: 'help_center' },
     { label: 'Mascotas perdidas', value: stats.mascotasPerdidas, color: '#735802', icon: 'pets' },
     { label: 'Encontrados', value: stats.encontrados, color: '#00685d', icon: 'check_circle' },
   ];

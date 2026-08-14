@@ -153,7 +153,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">help</span>
-            NN ({items.filter((i) => i.type === 'nn').length})
+            Sin identificar ({items.filter((i) => i.type === 'nn').length})
           </button>
 
           <button

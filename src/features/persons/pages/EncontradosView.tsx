@@ -107,7 +107,7 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
                 {item.type === 'mascota'
                   ? 'Mascota encontrada'
                   : item.type === 'nn'
-                  ? 'Sin Identificar (NN)'
+                  ? 'Sin Identificar'
                   : 'Encontrado'}
               </div>
             </div>

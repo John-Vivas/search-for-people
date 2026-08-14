@@ -33,7 +33,7 @@ export const ZoneDetails: React.FC<ZoneDetailsProps> = ({
     <div className="p-4 grid grid-cols-2 gap-3">
       <StatItem label="Desaparecidos" value={stats.missing} color="#ba1a1a" />
       <StatItem label="Encontrados" value={stats.found} color="#00685d" />
-      <StatItem label="NN" value={stats.unidentified} color="#8e711f" />
+      <StatItem label="Sin identificar" value={stats.unidentified} color="#8e711f" />
       <StatItem label="Mascotas" value={stats.pets} color="#735802" />
       <StatItem
         label="Centros"
@@ -61,7 +61,7 @@ export const ZoneDetails: React.FC<ZoneDetailsProps> = ({
             >
               <span className="font-medium text-[#191c1d]">{child.zoneName}</span>
               <span className="text-[#6d7a77] text-xs">
-                {child.missing} desap. · {child.found} enc. · {child.unidentified} NN ·{' '}
+                {child.missing} desap. · {child.found} enc. · {child.unidentified} s/i ·{' '}
                 {child.pets} masc.
               </span>
             </li>

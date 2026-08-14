@@ -44,7 +44,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
       case 'nn':
         return (
           <span className="bg-[#8e711f] text-white font-semibold text-xs px-2.5 py-1 rounded-full flex items-center gap-1 shadow-xs">
-            <span className="material-symbols-outlined text-[14px]">help</span> NN (Sin Identificar)
+            <span className="material-symbols-outlined text-[14px]">help</span> Sin identificar
           </span>
         );
       case 'mascota':

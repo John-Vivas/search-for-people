@@ -32,7 +32,7 @@ export function getMarkerStyle(
           bg: '#8e711f',
           border: '#735802',
           icon: 'person_search',
-          label: 'NN — Sin identificar',
+          label: 'Sin identificar',
         };
       default:
         return { bg: '#6d7a77', border: '#3d4947', icon: 'person', label: 'Persona' };

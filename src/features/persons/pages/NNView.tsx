@@ -22,7 +22,7 @@ export const NNView: React.FC<NNViewProps> = ({ items, onIdentifyPerson }) => {
     <div className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-12 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#191c1d] mb-2">
-          Personas Sin Identificar (NN)
+          Personas Sin Identificar
         </h1>
         <p className="text-sm text-[#3d4947] max-w-2xl leading-relaxed">
           Ayúdanos a identificar a estas personas. Revisa las características físicas, ropa o tatuajes. Si reconoces a alguien, haz clic en el botón de la tarjeta.
@@ -78,8 +78,8 @@ export const NNView: React.FC<NNViewProps> = ({ items, onIdentifyPerson }) => {
         {nnList.length === 0 ? (
           <div className="col-span-full">
             <ListEmptyState
-              title="No hay personas sin identificar (NN) registradas"
-              description="Los casos NN aparecerán aquí para que la comunidad ayude a identificarlos."
+              title="No hay personas sin identificar registradas"
+              description="Estos casos aparecerán aquí para que la comunidad ayude a identificarlos."
             />
           </div>
         ) : (

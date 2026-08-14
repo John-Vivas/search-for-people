@@ -120,10 +120,10 @@ function resolveDisplayName(row: PersonMappableRow): string {
   if (row.full_name?.trim()) return toTitleCase(row.full_name);
   if (row.status === 'UNIDENTIFIED') {
     const code = row.identifier_code?.trim();
-    if (code) return `NN ${code}`;
+    if (code) return `Sin identificar ${code}`;
     return row.approximate_age != null
       ? `Persona sin identificar, ~${row.approximate_age} años`
-      : 'Persona sin identificar (NN)';
+      : 'Persona sin identificar';
   }
   return 'Nombre no registrado';
 }

@@ -94,7 +94,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           }`}
         >
           <span className="material-symbols-outlined text-[20px]">help</span>
-          Personas NN
+          Sin identificar
         </button>
 
         <button
