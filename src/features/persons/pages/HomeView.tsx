@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PersonItem } from '@/src/features/persons/types/person';
 import { PersonCard } from '@/src/features/persons/components/PersonCard';
+import { InviteTeam } from '@/src/features/persons/components/InviteTeam';
 import { FEATURES } from '@/src/lib/featureFlags';
 
 interface HomeViewProps {
@@ -176,6 +177,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
           </div>
         </div>
       </section>
+
+      {/* Invitar a reportar */}
+      <InviteTeam />
 
       {/* Main Action & Disclaimer */}
       <section className="flex flex-col items-center gap-4 mb-12 px-4 text-center">
