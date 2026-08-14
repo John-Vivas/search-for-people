@@ -22,8 +22,9 @@ function capitalizeWord(word: string, isFirst: boolean): string {
   if (!isFirst && LOWER_WORDS.has(lower)) return lower;
 
   // Capitaliza la inicial y también tras guion/barra: "juan-pablo" → "Juan-Pablo".
+  // \p{L} (Unicode) cubre cualquier letra: tildes, ñ, ü, ç, etc. sin problema.
   return lower.replace(
-    /(^|[-/])([a-záéíóúñü])/g,
+    /(^|[-/])(\p{L})/gu,
     (_, sep: string, ch: string) => sep + ch.toUpperCase()
   );
 }
