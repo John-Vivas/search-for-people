@@ -34,7 +34,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
   ).length;
 
   return (
-    <div className="pb-24 md:pb-12 pt-6">
+    <div className="pb-8 md:pb-12 pt-6">
       {/* Hero Section */}
       <section className="flex flex-col items-center text-center px-4 max-w-3xl mx-auto mb-8 animate-fade-in">
         <div className="w-28 h-28 md:w-40 md:h-40 mb-4 rounded-full bg-[#f4fffb] border border-[#00685d]/20 flex items-center justify-center p-3 shadow-sm">
