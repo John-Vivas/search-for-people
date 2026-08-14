@@ -3,12 +3,15 @@ import { useAidRequests } from '@/src/features/aid/hooks/useAidRequests';
 import { useUserLocation } from '@/src/features/aid/hooks/useUserLocation';
 import { aidRequestsService } from '@/src/features/aid/services/aidRequests.service';
 import { AidRequestCard } from '@/src/features/aid/components/AidRequestCard';
+import { AidRequestDetailPanel } from '@/src/features/aid/components/AidRequestDetailPanel';
 import { AidRequestForm } from '@/src/features/aid/components/AidRequestForm';
 import type { AidRequest, AidRequestPhones } from '@/src/features/aid/types/aid';
 import { haversineKm } from '@/src/features/aid/utils/distance';
 import { ListLoadingState, ListErrorState } from '@/src/components/common/AsyncListState';
+import { Portal } from '@/src/components/common/Portal';
 import { PhoneSessionProvider, usePhoneSession } from '@/src/features/phone-auth/hooks/usePhoneSession';
 import { PhoneLoginModal } from '@/src/features/phone-auth/components/PhoneLoginModal';
+import { OtpCodeInput } from '@/src/features/phone-auth/components/OtpCodeInput';
 import { getPreferredName, setPreferredName } from '@/src/lib/preferredName';
 
 type StatusFilter = 'ALL' | 'OPEN' | 'IN_PROGRESS' | 'DELIVERED';
@@ -55,6 +58,9 @@ const AidBoardViewInner: React.FC = () => {
   const [deliveryCodeInput, setDeliveryCodeInput] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [newCode, setNewCode] = useState<string | null>(null);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [detailRequestId, setDetailRequestId] = useState<string | null>(null);
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
@@ -181,6 +187,17 @@ const AidBoardViewInner: React.FC = () => {
     [refetch]
   );
 
+  const handleRegenerateCode = useCallback(async (req: AidRequest) => {
+    setBusyId(req.id);
+    const res = await aidRequestsService.regenerateDeliveryCode(req.id);
+    setBusyId(null);
+    if (res.error) {
+      setRegenerateError(res.error.message || 'No se pudo generar un nuevo código');
+      return;
+    }
+    setNewCode(res.data?.deliveryCode ?? null);
+  }, []);
+
   const handleCancel = useCallback(
     async (req: AidRequest) => {
       setBusyId(req.id);
@@ -202,6 +219,22 @@ const AidBoardViewInner: React.FC = () => {
     [refetch, refetchPhones]
   );
 
+  const handleReopen = useCallback(
+    async (req: AidRequest) => {
+      setBusyId(req.id);
+      const res = await aidRequestsService.reopen(req.id);
+      setBusyId(null);
+      if (res.error) {
+        setRegenerateError(res.error.message || 'No se pudo reabrir la solicitud');
+        return;
+      }
+      refetch();
+      refetchPhones();
+      if (res.data?.deliveryCode) setNewCode(res.data.deliveryCode);
+    },
+    [refetch, refetchPhones]
+  );
+
   const handleDeliverIntent = useCallback((req: AidRequest) => {
     setActionError(null);
     setDeliveryCodeInput('');
@@ -212,6 +245,17 @@ const AidBoardViewInner: React.FC = () => {
     refetch();
     refetchPhones();
   }, [refetch, refetchPhones]);
+
+  const handleOpenDetails = useCallback((req: AidRequest) => setDetailRequestId(req.id), []);
+
+  // Looked up fresh from `requests` (not stored as a snapshot) so the open
+  // panel stays in sync if the request's status changes while it's open —
+  // e.g. someone else commits to it via realtime.
+  const detailRequest = detailRequestId ? requests.find((r) => r.id === detailRequestId) ?? null : null;
+  const detailDistanceKm =
+    detailRequest && userLocation && detailRequest.latitude != null && detailRequest.longitude != null
+      ? haversineKm(userLocation.lat, userLocation.lng, detailRequest.latitude, detailRequest.longitude)
+      : null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
@@ -336,10 +380,7 @@ const AidBoardViewInner: React.FC = () => {
                 distanceKm={distanceKm}
                 busy={busyId === req.id}
                 onCommit={handleCommit}
-                onMarkEnRoute={handleMarkEnRoute}
-                onDeliver={handleDeliverIntent}
-                onCancel={handleCancel}
-                onWithdraw={handleWithdraw}
+                onOpenDetails={handleOpenDetails}
               />
             );
           })}
@@ -347,6 +388,22 @@ const AidBoardViewInner: React.FC = () => {
       )}
 
       <AidRequestForm open={formOpen} onClose={() => setFormOpen(false)} onCreated={handleCreated} />
+
+      <AidRequestDetailPanel
+        request={detailRequest}
+        phones={detailRequest ? phones[detailRequest.id] : undefined}
+        sessionPhone={phone}
+        distanceKm={detailDistanceKm}
+        busy={detailRequest != null && busyId === detailRequest.id}
+        onClose={() => setDetailRequestId(null)}
+        onCommit={handleCommit}
+        onMarkEnRoute={handleMarkEnRoute}
+        onDeliver={handleDeliverIntent}
+        onCancel={handleCancel}
+        onWithdraw={handleWithdraw}
+        onRegenerateCode={handleRegenerateCode}
+        onReopen={handleReopen}
+      />
 
       <PhoneLoginModal
         open={loginOpen}
@@ -359,8 +416,9 @@ const AidBoardViewInner: React.FC = () => {
 
       {/* Commit modal */}
       {committing && (
+        <Portal>
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
           role="dialog"
           aria-modal="true"
           onClick={() => setCommitting(null)}
@@ -403,47 +461,114 @@ const AidBoardViewInner: React.FC = () => {
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
-      {/* Deliver modal */}
+      {/* Deliver modal — same shell/step design as the phone login code entry */}
       {delivering && (
+        <Portal>
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          className="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
           role="dialog"
           aria-modal="true"
+          aria-label="Confirmar entrega"
           onClick={() => setDelivering(null)}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-[#191c1d] mb-1">Confirmar entrega</h3>
+          <div
+            className="bg-white w-full max-w-sm sm:rounded-2xl rounded-t-2xl shadow-2xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-bold text-[#191c1d]">Confirmar entrega</h3>
+              <button
+                type="button"
+                onClick={() => setDelivering(null)}
+                className="p-2 -m-2 rounded-full text-[#436370] hover:bg-[#e7e8e9] cursor-pointer"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
             <p className="text-sm text-[#6d7a77] mb-4">
               Pídele al solicitante el código que recibió al publicar la solicitud.
             </p>
-            <label className="block text-xs font-bold text-[#191c1d] mb-1">Código de entrega</label>
-            <input
+
+            <OtpCodeInput
               value={deliveryCodeInput}
-              onChange={(e) => setDeliveryCodeInput(e.target.value)}
-              inputMode="numeric"
-              placeholder="123456"
-              className="w-full h-11 px-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm mb-4 focus:border-[#00685d] outline-none"
+              onChange={setDeliveryCodeInput}
+              autoFocus
+              disabled={busyId === delivering.id}
             />
-            {actionError && <p className="text-sm text-[#ba1a1a] font-medium mb-3">{actionError}</p>}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDelivering(null)}
-                className="flex-1 h-11 rounded-full border border-[#bcc9c6] text-[#3d4947] font-bold text-sm hover:bg-[#e7e8e9] transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={doDeliver}
-                disabled={busyId === delivering.id}
-                className="flex-1 h-11 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                Confirmar
-              </button>
-            </div>
+
+            {actionError && <p className="text-sm text-[#ba1a1a] font-medium mt-3">{actionError}</p>}
+
+            <button
+              onClick={doDeliver}
+              disabled={busyId === delivering.id || deliveryCodeInput.length < 6}
+              className="w-full h-12 mt-4 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {busyId === delivering.id ? 'Confirmando…' : 'Confirmar entrega'}
+            </button>
           </div>
         </div>
+        </Portal>
+      )}
+
+      {/* New delivery code reveal — shown once, right after regenerating */}
+      {newCode && (
+        <Portal>
+        <div
+          className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setNewCode(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="material-symbols-outlined text-[36px] text-[#00685d]">task_alt</span>
+            <h3 className="text-base font-bold text-[#191c1d] mt-2">Nuevo código generado</h3>
+            <p className="text-sm text-[#6d7a77] mt-1">
+              El código anterior ya no funciona. Guarda este y compártelo con quien te ayude para
+              confirmar la entrega.
+            </p>
+            <p className="text-3xl font-extrabold tracking-[0.3em] text-[#00685d] mt-4 mb-1">{newCode}</p>
+            <button
+              onClick={() => setNewCode(null)}
+              className="w-full h-12 mt-4 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors cursor-pointer"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+        </Portal>
+      )}
+
+      {/* Regenerate-code error */}
+      {regenerateError && (
+        <Portal>
+        <div
+          className="fixed inset-0 z-[1300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setRegenerateError(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="material-symbols-outlined text-[36px] text-[#ba1a1a]">error</span>
+            <p className="text-sm text-[#3d4947] mt-2">{regenerateError}</p>
+            <button
+              onClick={() => setRegenerateError(null)}
+              className="w-full h-11 mt-4 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+        </Portal>
       )}
     </div>
   );

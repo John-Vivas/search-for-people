@@ -36,6 +36,12 @@ export type FacilityPublic = Pick<
   'id' | 'zone_id' | 'location_id' | 'name' | 'facility_type' | 'address' | 'is_active'
 >;
 
+/** A facility with its coordinates resolved from `locations` — see facilitiesService.getFacilitiesWithLocation. */
+export type FacilityWithLocation = FacilityPublic & {
+  latitude: number | null;
+  longitude: number | null;
+};
+
 export type LocationInsert = Omit<Location, 'id' | 'created_at' | 'updated_at'> & {
   id?: string;
 };

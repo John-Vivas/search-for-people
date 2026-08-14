@@ -1,13 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { zonesService } from '@/src/features/map/services/zones.service';
+import { facilitiesService } from '@/src/features/map/services/facilities.service';
+import type { FacilityWithLocation } from '@/src/features/map/types/zone.db';
 import { aidRequestsService } from '@/src/features/aid/services/aidRequests.service';
 import { geocodeAddress, reverseGeocode } from '@/src/services/geocoding/geocoding.service';
 import { LocationPickerMap } from '@/src/features/map/components/LocationPickerMap';
 import { getPreferredName, setPreferredName } from '@/src/lib/preferredName';
+import { Portal } from '@/src/components/common/Portal';
 import {
   AidResourceType,
   RESOURCE_TYPE_LABELS,
 } from '@/src/features/aid/types/aid';
+
+/** Facility-type icon — includes 'COLLECTION_POINT', which exists at the DB
+ *  level (see RegisterPlaceModal) even though it's missing from the FacilityType TS enum. */
+function facilityIcon(type: string): string {
+  if (type === 'HOSPITAL') return 'local_hospital';
+  if (type === 'CLINIC') return 'medical_services';
+  if (type === 'SHELTER') return 'night_shelter';
+  if (type === 'EMERGENCY_CENTER') return 'emergency';
+  if (type === 'MORGUE') return 'local_hospital';
+  if (type === 'COLLECTION_POINT') return 'volunteer_activism';
+  return 'place';
+}
 
 interface AidRequestFormProps {
   open: boolean;
@@ -48,6 +63,9 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
   const [pickedCoords, setPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locatingMe, setLocatingMe] = useState(false);
   const [resolvingPoint, setResolvingPoint] = useState(false);
+  const [places, setPlaces] = useState<FacilityWithLocation[]>([]);
+  const [placesLoading, setPlacesLoading] = useState(false);
+  const [placesOpen, setPlacesOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -62,6 +80,12 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
         }))
         .sort((a, b) => a.label.localeCompare(b.label, 'es'));
       setCities(options);
+    });
+    setPlacesLoading(true);
+    facilitiesService.getFacilitiesWithLocation().then((res) => {
+      const withCoords = (res.data ?? []).filter((p) => p.latitude != null && p.longitude != null);
+      setPlaces(withCoords);
+      setPlacesLoading(false);
     });
   }, [open]);
 
@@ -85,6 +109,7 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
     setResourceLabel(''); setQuantity(''); setUnit(''); setUrgency(3);
     setRequesterName(''); setAddress(''); setPlaceName(''); setDescription('');
     setDeliveryCode(null); setLocationMode('address'); setPickedCoords(null);
+    setPlacesOpen(false);
   };
 
   const handleClose = () => {
@@ -98,6 +123,15 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
     const displayName = await reverseGeocode(lat, lng);
     setAddress(displayName || `Punto en el mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
     setResolvingPoint(false);
+  };
+
+  const handleSelectPlace = (place: FacilityWithLocation) => {
+    if (place.latitude == null || place.longitude == null) return;
+    setPickedCoords({ lat: place.latitude, lng: place.longitude });
+    setAddress(place.address?.trim() || place.name);
+    setPlaceName(place.name);
+    if (place.zone_id) setCityId(place.zone_id);
+    setPlacesOpen(false);
   };
 
   const useMyLocation = () => {
@@ -177,8 +211,9 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
   // Success step: show the one-time delivery code before closing.
   if (deliveryCode) {
     return (
+      <Portal>
       <div
-        className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+        className="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
         role="dialog"
         aria-modal="true"
         aria-label="Solicitud publicada"
@@ -205,12 +240,14 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
           </button>
         </div>
       </div>
+      </Portal>
     );
   }
 
   return (
+    <Portal>
     <div
-      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label="Nueva solicitud de ayuda"
@@ -296,6 +333,63 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
               </div>
             ) : (
               <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={useMyLocation}
+                    disabled={locatingMe}
+                    className="flex-1 h-10 px-3 rounded-xl border border-[#00685d] text-[#00685d] font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-[#f4fffb] transition-colors cursor-pointer disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {locatingMe ? 'progress_activity' : 'my_location'}
+                    </span>
+                    {locatingMe ? 'Obteniendo…' : 'Mi ubicación'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPlacesOpen((v) => !v)}
+                    className="flex-1 h-10 px-3 rounded-xl border border-[#bcc9c6] text-[#3d4947] font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-[#f3f4f5] transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">list</span>
+                    Lugares registrados
+                  </button>
+                </div>
+
+                {placesOpen && (
+                  <div className="border border-[#e1e3e4] rounded-xl max-h-40 overflow-y-auto divide-y divide-[#e1e3e4]">
+                    {placesLoading ? (
+                      <p className="text-xs text-[#6d7a77] p-3">Cargando lugares…</p>
+                    ) : places.length === 0 ? (
+                      <p className="text-xs text-[#6d7a77] p-3">
+                        No hay lugares registrados con ubicación todavía.
+                      </p>
+                    ) : (
+                      places.map((place) => (
+                        <button
+                          key={place.id}
+                          type="button"
+                          onClick={() => handleSelectPlace(place)}
+                          className="w-full flex items-center gap-2 p-2.5 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[18px] text-[#00685d] shrink-0">
+                            {facilityIcon(place.facility_type)}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-xs font-bold text-[#191c1d] truncate">
+                              {place.name}
+                            </span>
+                            {place.address && (
+                              <span className="block text-[11px] text-[#6d7a77] truncate">
+                                {place.address}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+
                 <LocationPickerMap
                   latitude={pickedCoords?.lat ?? null}
                   longitude={pickedCoords?.lng ?? null}
@@ -370,5 +464,6 @@ export const AidRequestForm: React.FC<AidRequestFormProps> = ({ open, onClose, o
         </div>
       </form>
     </div>
+    </Portal>
   );
 };

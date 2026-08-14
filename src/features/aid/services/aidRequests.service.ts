@@ -69,6 +69,24 @@ export const aidRequestsService = {
     return apiClient.post(`/aid-requests/${id}/cancel`);
   },
 
+  /**
+   * Requires login as the requester; only works on a cancelled or delivered
+   * request. Clears the previous provider and issues a brand-new delivery
+   * code (returned once), so a different person can pick it up from scratch.
+   */
+  reopen(id: string): Promise<ServiceResponse<AidRequest & { deliveryCode: string }>> {
+    return apiClient.post(`/aid-requests/${id}/reopen`);
+  },
+
+  /**
+   * Requires login as the requester. Invalidates the old code (and resets
+   * its attempt lock) and returns a brand-new one, once — for when the
+   * original code was lost or the provider ran out of attempts guessing it.
+   */
+  regenerateDeliveryCode(id: string): Promise<ServiceResponse<AidRequest & { deliveryCode: string }>> {
+    return apiClient.post(`/aid-requests/${id}/delivery-code/regenerate`);
+  },
+
   /** Requires login as the provider who committed; reopens the request for someone else. */
   withdraw(id: string): Promise<ServiceResponse<AidRequest>> {
     return apiClient.post(`/aid-requests/${id}/withdraw`);

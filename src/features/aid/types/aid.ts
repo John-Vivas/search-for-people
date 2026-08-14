@@ -170,3 +170,12 @@ export function urgencyInfo(urgency: number): UrgencyInfo {
   if (urgency === 3) return { label: 'Alta', bg: '#fbe6c2', text: '#735802', accent: '#e7a325' };
   return { label: 'Media', bg: '#d6f0e5', text: '#00685d', accent: '#00685d' };
 }
+
+/**
+ * Short, human-friendly display code (e.g. "#A-3F9C21") derived from the
+ * UUID — purely presentational, not stored anywhere, matching the
+ * `#PET-…`/`#REP-…` short-code convention used elsewhere in the app.
+ */
+export function shortRequestCode(id: string): string {
+  return `#A-${id.replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+}

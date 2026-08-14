@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { phoneAuthService } from '@/src/features/phone-auth/services/phoneAuth.service';
 import { usePhoneSession } from '@/src/features/phone-auth/hooks/usePhoneSession';
 import { OtpCodeInput } from '@/src/features/phone-auth/components/OtpCodeInput';
+import { Portal } from '@/src/components/common/Portal';
 
 interface PhoneLoginModalProps {
   open: boolean;
@@ -131,8 +132,9 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({ open, onClose,
   const labelCls = 'block text-xs font-bold text-[#191c1d] mb-1';
 
   return (
+    <Portal>
     <div
-      className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label="Iniciar sesión con tu teléfono"
@@ -282,5 +284,6 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({ open, onClose,
         )}
       </div>
     </div>
+    </Portal>
   );
 };
