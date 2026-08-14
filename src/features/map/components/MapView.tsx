@@ -85,7 +85,7 @@ export const MapView: React.FC<MapViewProps> = ({
     <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] md:h-[calc(100vh-72px)] overflow-hidden">
       <aside className="hidden lg:flex flex-col w-80 shrink-0 border-r border-[#e1e3e4] bg-[#f8f9fa] overflow-y-auto">
         <div className="p-4 space-y-4">
-          <MapFilters filters={filters} zones={zones} onChange={handleFilterChange} />
+          <MapFilters filters={filters} zones={zones} onChange={handleFilterChange} onRegister={onOpenRegister} />
           <MapLegend />
         </div>
 

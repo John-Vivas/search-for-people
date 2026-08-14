@@ -194,6 +194,7 @@ export const zonesService = {
     name: string;
     type?: 'DEPARTMENT' | 'CITY' | 'MUNICIPALITY' | 'DISTRICT';
     parentId?: string | null;
+    department?: string | null;
     latitude?: number | null;
     longitude?: number | null;
   }): Promise<ServiceResponse<EmergencyZonePublic>> {
@@ -208,6 +209,7 @@ export const zonesService = {
         p_parent_id: input.parentId ?? null,
         p_latitude: input.latitude ?? null,
         p_longitude: input.longitude ?? null,
+        p_department: input.department ?? null,
       });
       if (error) return fail(error, 'No se pudo registrar la zona');
       return ok(dbRowToPublic(data as EmergencyZoneDbRow) as EmergencyZonePublic);

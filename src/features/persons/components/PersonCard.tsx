@@ -79,7 +79,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
 
         <div className="flex flex-col justify-between flex-1 py-1">
           <div>
-            <div className="mb-2">{renderBadge()}</div>
+            <div className="mb-2 flex justify-center">{renderBadge()}</div>
             <div className="flex justify-between items-start gap-2">
               <h3 className="text-lg font-bold text-[#191c1d] group-hover:text-[#00685d] transition-colors">
                 {item.name}
@@ -139,7 +139,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
 
       <div className="p-4 flex-grow flex flex-col justify-between">
         <div>
-          <div className="mb-2">{renderBadge()}</div>
+          <div className="mb-2 flex justify-center">{renderBadge()}</div>
           <h3 className="text-lg font-bold text-[#191c1d] group-hover:text-[#00685d] transition-colors mb-0.5">
             {item.name}
           </h3>

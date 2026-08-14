@@ -4,6 +4,7 @@ import { getDepartmentZones, getCityLevelZones } from '@/src/features/map/utils/
 import { zonesService } from '@/src/features/map/services/zones.service';
 import { facilitiesService } from '@/src/features/map/services/facilities.service';
 import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
+import { geocodeAddress } from '@/src/services/geocoding/geocoding.service';
 
 type Kind = 'zone' | 'facility' | 'collection';
 
@@ -103,13 +104,48 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
     setSubmitting(true);
     setError(null);
     try {
+      const deptNode = departments.find((d) => d.id === parentId);
+      const cityNode = cities.find((c) => c.id === zoneId);
+
+      // Coordenadas: las capturadas por GPS, o geocodificadas por nombre para
+      // que la zona/centro aparezca en el mapa aunque no usen "Usar mi ubicación".
+      let lat = coords?.lat ?? null;
+      let lng = coords?.lng ?? null;
+      if (lat == null || lng == null) {
+        const geo = await geocodeAddress(
+          kind === 'zone'
+            ? { city: name.trim(), neighborhood: deptNode?.name ?? null }
+            : { address: address.trim() || null, city: cityNode?.name ?? null }
+        );
+        if (geo) {
+          lat = geo.latitude;
+          lng = geo.longitude;
+        } else {
+          // Fallback: centroide del departamento (zona) o de la ciudad (centro),
+          // para que SIEMPRE quede ubicado en el mapa aunque sea aproximado.
+          const fallbackName = kind === 'zone' ? deptNode?.name : cityNode?.name;
+          if (fallbackName) {
+            const geoFb = await geocodeAddress({ city: fallbackName });
+            if (geoFb) {
+              lat = geoFb.latitude;
+              lng = geoFb.longitude;
+            }
+          }
+        }
+      }
+
       if (kind === 'zone') {
+        // Los departamentos del árbol son sintéticos (id "dept-...", no UUID),
+        // así que mandamos el NOMBRE del depto y solo el parentId si es UUID real.
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parentId);
         const res = await zonesService.createCommunityZone({
           name: name.trim(),
           type: zoneType,
-          parentId: zoneType === 'DEPARTMENT' ? null : parentId || null,
-          latitude: coords?.lat ?? null,
-          longitude: coords?.lng ?? null,
+          parentId: zoneType === 'DEPARTMENT' ? null : isUuid ? parentId : null,
+          department: zoneType === 'DEPARTMENT' ? null : deptNode?.name ?? null,
+          latitude: lat,
+          longitude: lng,
         });
         if (res.error) throw res.error;
       } else {
@@ -118,8 +154,8 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
           facilityType: (kind === 'collection' ? 'COLLECTION_POINT' : facilityType) as never,
           zoneId: zoneId || null,
           address: address.trim() || null,
-          latitude: coords?.lat ?? null,
-          longitude: coords?.lng ?? null,
+          latitude: lat,
+          longitude: lng,
         });
         if (res.error) throw res.error;
       }
@@ -289,7 +325,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
           </div>
 
           {error && (
-            <p className="text-xs text-[#ba1a1a] bg-[#ffdad6] rounded-lg px-3 py-2">{error}</p>
+            <p className="text-xs text-center text-[#ba1a1a] bg-[#ffdad6] rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
