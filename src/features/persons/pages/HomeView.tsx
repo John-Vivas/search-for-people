@@ -22,9 +22,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
 
   const featuredItems = items.slice(0, 4);
   const missingCount = items.filter((i) => i.type === 'desaparecido').length;
-  const foundCount = items.filter((i) => i.type === 'encontrado').length;
+  // "Encontrados" incluye personas encontradas y mascotas encontradas.
+  const foundCount = items.filter(
+    (i) => i.type === 'encontrado' || i.petStatus === 'FOUND'
+  ).length;
   const nnCount = items.filter((i) => i.type === 'nn').length;
-  const petCount = items.filter((i) => i.type === 'mascota').length;
+  // "Mascotas perdidas" cuenta solo las que siguen perdidas (no las encontradas).
+  const petCount = items.filter(
+    (i) => i.type === 'mascota' && i.petStatus !== 'FOUND'
+  ).length;
 
   return (
     <div className="pb-24 md:pb-12 pt-6">
@@ -86,7 +92,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
             <div className="w-12 h-12 rounded-full bg-[#f4fffb] border border-[#00685d]/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-[#00685d] text-[26px]">handshake</span>
             </div>
-            <span className="text-sm font-bold text-[#191c1d] text-center">Personas encontradas</span>
+            <span className="text-sm font-bold text-[#191c1d] text-center">Encontrados</span>
             <span className="text-[11px] text-[#00685d] font-semibold mt-1">{foundCount} registrados</span>
           </button>
 
