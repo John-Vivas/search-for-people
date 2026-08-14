@@ -1,5 +1,6 @@
 import type { PersonStatus } from '@/src/features/persons/types/person.db';
 import type { ItemType, PersonItem } from '@/src/features/persons/types/person';
+import { toTitleCase } from '@/src/lib/formatText';
 
 /** Context for mapping DB rows → UI PersonItem (zones + optional locations) */
 export interface ZoneInfo {
@@ -116,7 +117,7 @@ function formatRelativeUpdatedAt(iso: string): string {
 }
 
 function resolveDisplayName(row: PersonMappableRow): string {
-  if (row.full_name?.trim()) return row.full_name.trim();
+  if (row.full_name?.trim()) return toTitleCase(row.full_name);
   if (row.status === 'UNIDENTIFIED') {
     const code = row.identifier_code?.trim();
     if (code) return `NN ${code}`;
@@ -135,7 +136,7 @@ function resolveCode(row: PersonMappableRow): string {
 
 function resolveCity(zone: ZoneInfo | undefined): string {
   if (!zone) return 'Zona no registrada';
-  return zone.city ?? zone.name;
+  return toTitleCase(zone.city ?? zone.name);
 }
 
 function resolveLocationText(
@@ -146,11 +147,12 @@ function resolveLocationText(
   if (locId) {
     const loc = ctx.locationsById.get(locId);
     if (loc) {
-      return loc.place_name ?? loc.address ?? 'Ubicación registrada';
+      const text = loc.place_name ?? loc.address;
+      return text ? toTitleCase(text) : 'Ubicación registrada';
     }
   }
   const zone = row.zone_id ? ctx.zonesById.get(row.zone_id) : undefined;
-  if (zone?.name) return zone.name;
+  if (zone?.name) return toTitleCase(zone.name);
   return 'Ubicación no registrada';
 }
 

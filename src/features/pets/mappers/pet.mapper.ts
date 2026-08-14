@@ -4,6 +4,7 @@ import type {
   PersonEnrichmentContext,
   ZoneInfo,
 } from '@/src/features/persons/mappers/person.mapper';
+import { toTitleCase } from '@/src/lib/formatText';
 
 /** DB pet row fields used by the mapper */
 export interface PetMappableRow {
@@ -62,10 +63,10 @@ function formatRelativeUpdatedAt(iso: string): string {
 }
 
 function resolveDisplayName(row: PetMappableRow): string {
-  if (row.name?.trim()) return row.name.trim();
-  const species = row.species?.trim() || 'Mascota';
+  if (row.name?.trim()) return toTitleCase(row.name);
+  const species = toTitleCase(row.species) || 'Mascota';
   const breed = row.breed?.trim();
-  return breed ? `${species} (${breed})` : species;
+  return breed ? `${species} (${toTitleCase(breed)})` : species;
 }
 
 function resolveCode(row: PetMappableRow): string {
@@ -74,7 +75,7 @@ function resolveCode(row: PetMappableRow): string {
 
 function resolveCity(zone: ZoneInfo | undefined): string {
   if (!zone) return 'Zona no registrada';
-  return zone.city ?? zone.name;
+  return toTitleCase(zone.city ?? zone.name);
 }
 
 function resolveLocationText(
@@ -84,10 +85,13 @@ function resolveLocationText(
   const locId = row.last_seen_location_id ?? row.current_location_id;
   if (locId) {
     const loc = ctx.locationsById.get(locId);
-    if (loc) return loc.place_name ?? loc.address ?? 'Ubicación registrada';
+    if (loc) {
+      const text = loc.place_name ?? loc.address;
+      return text ? toTitleCase(text) : 'Ubicación registrada';
+    }
   }
   const zone = row.zone_id ? ctx.zonesById.get(row.zone_id) : undefined;
-  return zone?.name ?? 'Ubicación no registrada';
+  return zone?.name ? toTitleCase(zone.name) : 'Ubicación no registrada';
 }
 
 function resolveCoordinates(
