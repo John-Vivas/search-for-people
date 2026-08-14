@@ -67,8 +67,12 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
           alt={item.name}
           className="relative w-full h-full object-contain"
         />
+      </div>
 
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+      {/* Header Info */}
+      <div className="mb-6">
+        {/* Estado + verificación: fuera de la foto para no taparla */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           {item.type === 'desaparecido' && (
             <div className="bg-[#ba1a1a] text-white px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
               <span className="material-symbols-outlined text-[18px]">warning</span>
@@ -89,16 +93,13 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
           )}
 
           {item.verified && (
-            <div className="bg-[#00685d]/90 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-xs">
+            <div className="bg-[#00685d]/90 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
               <span className="material-symbols-outlined text-[16px]">verified</span>
               <span className="text-[11px] font-semibold">Información verificada</span>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Header Info */}
-      <div className="mb-6">
         <h1 className="text-3xl md:text-4xl font-extrabold text-[#191c1d] mb-2">
           {item.name}
         </h1>
