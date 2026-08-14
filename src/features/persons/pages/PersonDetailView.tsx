@@ -88,7 +88,7 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
           {item.type === 'nn' && (
             <div className="bg-[#8e711f] text-white px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
               <span className="material-symbols-outlined text-[18px]">help</span>
-              <span className="text-xs font-extrabold uppercase tracking-wider">Sin Identificar (NN)</span>
+              <span className="text-xs font-extrabold uppercase tracking-wider">Sin Identificar</span>
             </div>
           )}
 

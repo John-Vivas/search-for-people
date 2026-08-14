@@ -166,7 +166,7 @@ export const MapView: React.FC<MapViewProps> = ({
               <option value="ALL">Todos</option>
               <option value="MISSING">Desaparecidos</option>
               <option value="FOUND">Encontrados</option>
-              <option value="UNIDENTIFIED">NN</option>
+              <option value="UNIDENTIFIED">Sin identificar</option>
             </select>
           </div>
         </div>

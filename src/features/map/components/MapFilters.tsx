@@ -135,7 +135,7 @@ export const MapFilters: React.FC<MapFiltersProps> = ({
           <option value="ALL">Todos</option>
           <option value="MISSING">Desaparecidos</option>
           <option value="FOUND">Encontrados</option>
-          <option value="UNIDENTIFIED">NN</option>
+          <option value="UNIDENTIFIED">Sin identificar</option>
         </select>
         {(filters.type === 'PET' || filters.type === 'FACILITY') && (
           <p className="text-[10px] text-[#6d7a77] mt-1">Estado aplica solo a personas</p>

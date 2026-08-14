@@ -12,7 +12,7 @@ export const MapLegend: React.FC = () => (
       {[
         { color: '#ba1a1a', icon: 'person_alert', text: 'Desaparecido' },
         { color: '#00685d', icon: 'person', text: 'Encontrado' },
-        { color: '#8e711f', icon: 'person_search', text: 'NN — Sin identificar' },
+        { color: '#8e711f', icon: 'person_search', text: 'Sin identificar' },
         { color: '#735802', icon: 'pets', text: 'Mascota' },
         { color: '#436370', icon: 'local_hospital', text: 'Centro de atención' },
       ].map((item) => (

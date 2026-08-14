@@ -105,7 +105,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
             <div className="w-12 h-12 rounded-full bg-[#e1e3e4] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-[#3d4947] text-[26px]">help_center</span>
             </div>
-            <span className="text-sm font-bold text-[#191c1d] text-center">Personas sin identificar (NN)</span>
+            <span className="text-sm font-bold text-[#191c1d] text-center">Personas sin identificar</span>
             <span className="text-[11px] text-[#8e711f] font-semibold mt-1">{nnCount} casos</span>
           </button>
 
@@ -168,7 +168,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ items, onNavigate, onSelectP
           <div className="w-px h-10 bg-[#bcc9c6] hidden sm:block"></div>
           <div className="flex flex-col items-center min-w-[90px] flex-1">
             <span className="text-2xl md:text-3xl font-black text-[#436370]">{nnCount}</span>
-            <span className="text-xs font-medium text-[#3d4947]">NN Identificándose</span>
+            <span className="text-xs font-medium text-[#3d4947]">Sin identificar</span>
           </div>
           <div className="w-px h-10 bg-[#bcc9c6] hidden sm:block"></div>
           <div className="flex flex-col items-center min-w-[90px] flex-1">

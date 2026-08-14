@@ -18,7 +18,7 @@ function statusText(location: MapLocation): string {
       case 'FOUND':
         return 'Encontrado';
       case 'UNIDENTIFIED':
-        return 'NN';
+        return 'Sin identificar';
     }
   }
   if (location.type === 'PET') return 'Mascota';

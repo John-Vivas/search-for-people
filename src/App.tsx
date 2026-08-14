@@ -381,7 +381,7 @@ export function App() {
               <span>Estamos Buscando</span>
             </div>
             <p>
-              Plataforma comunitaria e independiente de búsqueda de personas desaparecidas, encontradas, NN y mascotas.
+              Plataforma comunitaria e independiente de búsqueda de personas desaparecidas, encontradas, sin identificar y mascotas.
             </p>
             <p className="text-[11px] text-[#8e711f]">
               En caso de emergencia con riesgo inminente, comunícate siempre con la línea oficial 123 (Policía Nacional) o la Fiscalía General de la Nación.
