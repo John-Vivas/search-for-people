@@ -136,6 +136,9 @@ function buildReportFormFromFlow(input: {
   subjectCityZoneId?: string | null;
   subjectNeighborhood?: string;
   subjectAddress?: string;
+  subjectSpecies?: string;
+  subjectBreed?: string;
+  subjectColor?: string;
   /** Legacy single free-text location; still accepted as fallback */
   subjectZone?: string;
   subjectDate: string;
@@ -164,14 +167,69 @@ function buildReportFormFromFlow(input: {
     locationCityZoneId: input.subjectCityZoneId ?? null,
     locationNeighborhood: input.subjectNeighborhood,
     locationAddress: input.subjectAddress,
+    petSpecies: input.subjectSpecies,
+    petBreed: input.subjectBreed,
+    petColor: input.subjectColor,
     eventDate: input.subjectDate,
     observations: input.subjectObs,
     photoUrl: input.photoPreview,
   };
 }
 
+export interface DuplicateMatch {
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
+const PERSON_STATUS_LABEL: Record<string, string> = {
+  MISSING: 'Desaparecido',
+  FOUND: 'Encontrado',
+  IDENTIFIED: 'Identificado',
+  UNIDENTIFIED: 'NN',
+  TRANSFERRED: 'Trasladado',
+  REUNITED: 'Reunido',
+};
+
+/**
+ * Busca registros existentes parecidos (mismo nombre en la misma ciudad) para
+ * avisar de posibles duplicados antes de crear. No bloquea: solo informa.
+ */
+async function findSimilarRecords(form: ReportForm): Promise<DuplicateMatch[]> {
+  if (isMockMode()) return [];
+  const name = form.subjectName?.trim();
+  if (!name || name.length < 3) return [];
+  const zoneId = form.locationCityZoneId ?? undefined;
+
+  try {
+    if (form.itemType === 'mascota') {
+      const res = await petsService.searchPets({ query: name, zoneId, limit: 5 });
+      return (res.data ?? []).map((p) => ({
+        id: p.id,
+        title: p.name ?? 'Mascota',
+        subtitle: [p.species, p.breed, p.color].filter(Boolean).join(' · ') || 'Mascota',
+      }));
+    }
+
+    const res = await personsService.searchPersons({ query: name, zoneId, limit: 5 });
+    return (res.data ?? []).map((p) => ({
+      id: p.id,
+      title: p.full_name ?? 'Sin nombre',
+      subtitle: [
+        PERSON_STATUS_LABEL[p.status] ?? p.status,
+        p.approximate_age != null ? `${p.approximate_age} años` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export const reportService = {
   buildReportFormFromFlow,
+  findSimilarRecords,
 
   async createReport(form: ReportForm): Promise<ServiceResponse<ReportSubmissionResult>> {
     if (isMockMode()) {
@@ -179,7 +237,6 @@ export const reportService = {
     }
 
     try {
-      console.log('[REPORT FLOW] step 1: Zone + location resolution');
       const cityZone = await resolveCityZone(form);
       const zoneId = cityZone?.id ?? null;
 
@@ -200,14 +257,12 @@ export const reportService = {
       const lastSeenAt = form.eventDate
         ? new Date(form.eventDate).toISOString()
         : new Date().toISOString();
-      console.log('[REPORT FLOW] step 1: success');
 
       const identifierCode =
         form.itemType === 'nn'
           ? `NN-${Date.now().toString().slice(-6)}`
           : `REP-${Date.now().toString().slice(-6)}`;
 
-      console.log('[REPORT FLOW] step 2: RPC submit_community_report');
       const supabase = getSupabaseClient();
       const { data: rpcRows, error: rpcError } = await supabase.rpc('submit_community_report', {
         p_reporter_type: mapRoleUIToType(form.reporterRole),
@@ -224,7 +279,10 @@ export const reportService = {
         p_description: form.observations || null,
         p_last_seen_at: lastSeenAt,
         p_zone_id: zoneId,
-        p_pet_species: form.itemType === 'mascota' ? 'Mascota' : null,
+        p_pet_species:
+          form.itemType === 'mascota' ? form.petSpecies?.trim() || 'Mascota' : null,
+        p_pet_breed: form.itemType === 'mascota' ? form.petBreed?.trim() || null : null,
+        p_pet_color: form.itemType === 'mascota' ? form.petColor?.trim() || null : null,
         p_photo_url: form.photoUrl || null,
         p_latitude: latitude,
         p_longitude: longitude,
@@ -243,7 +301,6 @@ export const reportService = {
             : rpcError.message || 'Error al ejecutar RPC submit_community_report';
         return fail(rpcError, msg);
       }
-      console.log('[REPORT FLOW] step 2: success');
 
       const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
       const reportId = rpcResult?.report_id || `rep-${Date.now()}`;
@@ -251,7 +308,6 @@ export const reportService = {
       const petId = rpcResult?.pet_id || null;
       const submittedAt = rpcResult?.submitted_at || new Date().toISOString();
 
-      console.log('[REPORT FLOW] step 3: Admin DTO construction');
       const fallbackRow: AdminReportQueueRow = {
         report_id: reportId,
         report_type: reportType,
@@ -280,8 +336,6 @@ export const reportService = {
         zone_city: form.locationZone.split(',')[0]?.trim() ?? null,
       };
 
-      console.log('[REPORT FLOW] step 3: success');
-
       return ok({
         adminReport: mapAdminQueueRowToAdminReportItem(fallbackRow),
         publishToPublicCatalog: false,
@@ -295,8 +349,8 @@ export const reportService = {
     }
   },
 
-  async submitSighting(sighting: SightingReport): Promise<ServiceResponse<boolean>> {
-    console.info('[reportService] Avistamiento registrado (pendiente de integración):', sighting.id);
+  async submitSighting(_sighting: SightingReport): Promise<ServiceResponse<boolean>> {
+    // TODO: persist sightings once the moderation flow supports them.
     return mockApiCall(true);
   },
 

@@ -8,19 +8,20 @@ interface PersonCardProps {
   layout?: 'grid' | 'horizontal';
 }
 
-export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'grid' }) => {
+const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'grid' }) => {
   const [copied, setCopied] = useState(false);
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const caseUrl = `${window.location.origin}/caso/${item.id}`;
     if (navigator.share) {
       navigator.share({
         title: `Estamos Buscando: ${item.name}`,
         text: `Información sobre ${item.name} (${item.code}) - ${item.location}`,
-        url: window.location.href,
+        url: caseUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(`${window.location.origin}/?id=${item.id}`);
+      navigator.clipboard.writeText(caseUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -183,3 +184,6 @@ export const PersonCard: React.FC<PersonCardProps> = ({ item, onSelect, layout =
     </article>
   );
 };
+
+/** Memoized: list cards only re-render when their own item/handlers change. */
+export const PersonCard = React.memo(PersonCardBase);

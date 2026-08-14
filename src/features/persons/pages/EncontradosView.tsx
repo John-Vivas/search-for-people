@@ -7,68 +7,67 @@ interface EncontradosViewProps {
   onSelectPerson: (person: PersonItem) => void;
 }
 
+type FoundFilter = 'todos' | 'personas' | 'nn' | 'mascotas';
+
+/** A record counts as "found" if it's a found/NN person or a found pet. */
+function isFound(item: PersonItem): boolean {
+  return item.type === 'encontrado' || item.type === 'nn' || item.petStatus === 'FOUND';
+}
+
 export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelectPerson }) => {
-  const [subFilter, setSubFilter] = useState<'todos' | 'identificados' | 'nn'>('identificados');
+  const [subFilter, setSubFilter] = useState<FoundFilter>('todos');
+
+  const found = useMemo(() => items.filter(isFound), [items]);
+
+  const counts = useMemo(
+    () => ({
+      todos: found.length,
+      personas: found.filter((i) => i.type === 'encontrado').length,
+      nn: found.filter((i) => i.type === 'nn').length,
+      mascotas: found.filter((i) => i.petStatus === 'FOUND').length,
+    }),
+    [found]
+  );
 
   const encontrados = useMemo(() => {
-    return items.filter((item) => {
-      if (subFilter === 'identificados') {
-        return item.type === 'encontrado';
-      }
-      if (subFilter === 'nn') {
-        return item.type === 'nn';
-      }
-      return item.type === 'encontrado' || item.type === 'nn';
+    return found.filter((item) => {
+      if (subFilter === 'personas') return item.type === 'encontrado';
+      if (subFilter === 'nn') return item.type === 'nn';
+      if (subFilter === 'mascotas') return item.petStatus === 'FOUND';
+      return true;
     });
-  }, [items, subFilter]);
+  }, [found, subFilter]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-12 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-[#191c1d] mb-1">
-          Personas Encontradas
+          Encontrados
         </h1>
         <p className="text-sm text-[#3d4947]">
-          Listado de personas que han sido localizadas y se encuentran recibiendo atención en albergues o centros de salud.
+          Personas y mascotas que han sido localizadas. Filtra por categoría.
         </p>
 
-        {/* Filters */}
+        {/* Category filters */}
         <div className="flex flex-wrap gap-2 mt-4">
-          <button
-            onClick={() => setSubFilter('todos')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              subFilter === 'todos'
-                ? 'bg-[#008376] text-white font-bold'
-                : 'bg-white border border-[#bcc9c6] text-[#3d4947] hover:bg-[#f3f4f5]'
-            }`}
-          >
-            Todos
-          </button>
-
-          <button
-            onClick={() => setSubFilter('identificados')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-              subFilter === 'identificados'
-                ? 'bg-[#2A9D8F] text-white shadow-xs'
-                : 'bg-[#E6F4F1] border border-[#2A9D8F] text-[#2A9D8F] hover:bg-[#2A9D8F] hover:text-white'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]" data-weight="fill">
-              check_circle
-            </span>
-            Identificados
-          </button>
-
-          <button
-            onClick={() => setSubFilter('nn')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              subFilter === 'nn'
-                ? 'bg-[#436370] text-white font-bold'
-                : 'bg-white border border-[#bcc9c6] text-[#3d4947] hover:bg-[#f3f4f5]'
-            }`}
-          >
-            Sin Identificar (NN)
-          </button>
+          {([
+            { key: 'todos', label: 'Todos' },
+            { key: 'personas', label: 'Personas' },
+            { key: 'nn', label: 'Sin identificar (NN)' },
+            { key: 'mascotas', label: 'Mascotas' },
+          ] as { key: FoundFilter; label: string }[]).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setSubFilter(f.key)}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                subFilter === f.key
+                  ? 'bg-[#008376] text-white shadow-xs'
+                  : 'bg-white border border-[#bcc9c6] text-[#3d4947] hover:bg-[#f3f4f5]'
+              }`}
+            >
+              {f.label} ({counts[f.key]})
+            </button>
+          ))}
         </div>
       </div>
 
@@ -96,15 +95,19 @@ export const EncontradosView: React.FC<EncontradosViewProps> = ({ items, onSelec
               />
               <div
                 className={`absolute top-2 left-2 px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-xs ${
-                  item.type === 'encontrado'
-                    ? 'bg-[#E6F4F1] text-[#2A9D8F]'
-                    : 'bg-[#f3f4f5] text-[#6d7a77] border border-[#bcc9c6]'
+                  item.type === 'nn'
+                    ? 'bg-[#f3f4f5] text-[#6d7a77] border border-[#bcc9c6]'
+                    : 'bg-[#E6F4F1] text-[#2A9D8F]'
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]" data-weight="fill">
-                  {item.type === 'encontrado' ? 'check_circle' : 'help'}
+                  {item.type === 'mascota' ? 'pets' : item.type === 'nn' ? 'help' : 'check_circle'}
                 </span>
-                {item.type === 'encontrado' ? 'Encontrado' : 'Sin Identificar (NN)'}
+                {item.type === 'mascota'
+                  ? 'Mascota encontrada'
+                  : item.type === 'nn'
+                  ? 'Sin Identificar (NN)'
+                  : 'Encontrado'}
               </div>
             </div>
 

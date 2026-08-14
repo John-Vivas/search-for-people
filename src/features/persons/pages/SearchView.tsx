@@ -8,13 +8,21 @@ interface SearchViewProps {
   onSelectPerson: (person: PersonItem) => void;
 }
 
+const CATEGORY_FILTERS = ['todos', 'desaparecido', 'encontrado', 'nn', 'mascota'];
+
 export const SearchView: React.FC<SearchViewProps> = ({
   items,
   initialFilter = 'todos',
   onSelectPerson
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>(initialFilter);
+  // `initialFilter` doubles as either a category (from the tiles) or free-text
+  // search (from the home search box). If it isn't a known category, treat it
+  // as the initial search query so a name like "lucas" actually searches.
+  const initialIsCategory = CATEGORY_FILTERS.includes(initialFilter);
+  const [searchQuery, setSearchQuery] = useState(initialIsCategory ? '' : initialFilter);
+  const [selectedType, setSelectedType] = useState<string>(
+    initialIsCategory ? initialFilter : 'todos'
+  );
   const [selectedZone, setSelectedZone] = useState<string>('todas');
   const [visibleCount, setVisibleCount] = useState(8);
 

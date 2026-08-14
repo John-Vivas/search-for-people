@@ -22,6 +22,12 @@ export interface ReportForm {
   locationNeighborhood?: string;
   /** Street address / dirección */
   locationAddress?: string;
+  /** Pet-only: species (Perro, Gato…) */
+  petSpecies?: string;
+  /** Pet-only: breed / raza */
+  petBreed?: string;
+  /** Pet-only: color */
+  petColor?: string;
   eventDate: string;
   observations: string;
   photoUrl?: string;

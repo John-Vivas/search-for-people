@@ -65,18 +65,18 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onNaviga
         </button>
 
         <button
-          onClick={() => onNavigate('admin')}
+          onClick={() => onNavigate('ayuda')}
           className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-            currentTab.startsWith('admin') ? 'text-[#00685d] font-bold' : 'text-[#6d7a77]'
+            currentTab === 'ayuda' ? 'text-[#00685d] font-bold' : 'text-[#6d7a77]'
           }`}
         >
           <span
             className="material-symbols-outlined text-[22px]"
-            data-weight={currentTab.startsWith('admin') ? 'fill' : 'normal'}
+            data-weight={currentTab === 'ayuda' ? 'fill' : 'normal'}
           >
-            admin_panel_settings
+            volunteer_activism
           </span>
-          <span className="text-[10px]">Admin</span>
+          <span className="text-[10px]">Ayuda</span>
         </button>
       </div>
     </nav>
