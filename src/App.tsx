@@ -19,6 +19,7 @@ import {
   ListErrorState,
   ListLoadingState,
 } from '@/src/components/common/AsyncListState';
+import { FEATURES } from '@/src/lib/featureFlags';
 
 // Eagerly loaded: the common, lightweight list views (no heavy deps).
 import { HomeView } from '@/src/views/HomeView';
@@ -302,7 +303,7 @@ export function App() {
                 />
               }
             />
-            <Route path="/ayuda" element={<AidBoardView />} />
+            {FEATURES.aid && <Route path="/ayuda" element={<AidBoardView />} />}
             <Route
               path="/admin"
               element={renderAdminContent(
