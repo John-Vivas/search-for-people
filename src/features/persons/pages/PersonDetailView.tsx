@@ -54,11 +54,18 @@ export const PersonDetailView: React.FC<PersonDetailViewProps> = ({
       </div>
 
       {/* Hero Photo & Badges */}
-      <div className="relative w-full aspect-square md:aspect-video bg-[#e1e3e4] rounded-2xl overflow-hidden mb-6 shadow-sm border border-[#e1e3e4]">
+      <div className="relative w-full aspect-square md:aspect-video bg-[#e7e8e9] rounded-2xl overflow-hidden mb-6 shadow-sm border border-[#e1e3e4]">
+        {/* Blurred fill of the same photo so the full image (object-contain)
+            shows without ugly empty bands when it isn't 1:1 / 16:9. */}
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-110 blur-2xl opacity-45"
+          style={{ backgroundImage: `url("${item.photo}")` }}
+          aria-hidden="true"
+        />
         <img
           src={item.photo}
           alt={item.name}
-          className="w-full h-full object-cover"
+          className="relative w-full h-full object-contain"
         />
 
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">

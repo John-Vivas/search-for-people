@@ -209,7 +209,12 @@ export function App() {
   const handleReportSubmitted = (result: ReportSubmissionResult) => {
     addAdminReport(result.adminReport);
     if (result.publishToPublicCatalog && result.publicPreview) {
+      // Mock mode: optimistically show it right away.
       addPersonItem(result.publicPreview);
+    } else {
+      // Supabase mode: reload the catalog so the new case appears without a
+      // manual page refresh.
+      refetch();
     }
   };
 
