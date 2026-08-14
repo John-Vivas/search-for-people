@@ -23,6 +23,7 @@ export async function setCaseStatus(input: {
       p_id: input.id,
       p_kind: input.kind,
       p_status: input.status,
+      p_pin: (import.meta.env.VITE_ADMIN_PIN ?? '').toString(),
     });
     if (error) return fail(error, 'No se pudo actualizar el estado del caso');
     invalidateEnrichmentContext();

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Protege el panel de moderación con una clave (VITE_ADMIN_PIN).
@@ -6,16 +7,41 @@ import React, { useState } from 'react';
  * el front solo controla la UI (queda visible en el bundle), no el acceso a la
  * BD. La clave NO se guarda en el código: se define en VITE_ADMIN_PIN (Vercel /
  * .env.local). Si no está configurada, el panel queda CERRADO (fail-closed).
+ * Cierra la sesión tras 5 min de inactividad y vuelve a /inicio.
  */
 const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN ?? '').toString();
 const SESSION_KEY = 'estamos_buscando_admin_ok';
+const IDLE_MS = 5 * 60 * 1000; // 5 minutos sin actividad
 
 export const AdminGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
   const [authed, setAuthed] = useState(
     () => sessionStorage.getItem(SESSION_KEY) === '1'
   );
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+
+  // Auto-cierre por inactividad: sin movimiento durante 5 min → cierra y vuelve a inicio.
+  useEffect(() => {
+    if (!authed || !ADMIN_PIN) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const logout = () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      setAuthed(false);
+      navigate('/inicio');
+    };
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(logout, IDLE_MS);
+    };
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [authed, navigate]);
 
   // Fail-closed: sin clave configurada no se abre el panel.
   if (!ADMIN_PIN) {
