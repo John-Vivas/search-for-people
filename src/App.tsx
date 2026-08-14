@@ -14,6 +14,9 @@ import { BottomNavBar } from '@/src/components/BottomNavBar';
 import { SightingModal } from '@/src/components/SightingModal';
 import { usePersons } from '@/src/features/persons/hooks/usePersons';
 import { useAdminReports } from '@/src/features/admin/hooks/useAdminReports';
+import { AdminGate } from '@/src/features/admin/components/AdminGate';
+import { AdminCasesView } from '@/src/features/admin/pages/AdminCasesView';
+import { setCaseStatus } from '@/src/features/admin/services/casesService';
 import type { ReportSubmissionResult } from '@/src/features/reports/services/reportService';
 import {
   ListErrorState,
@@ -202,6 +205,16 @@ export function App() {
 
   const handleSelectPerson = (person: PersonItem) => navigate(`/caso/${person.id}`);
 
+  const handleMarkStatus = async (item: PersonItem, status: string) => {
+    const kind = item.type === 'mascota' ? 'pet' : 'person';
+    const res = await setCaseStatus({ id: item.id, kind, status });
+    if (res.error) {
+      alert(res.error.message);
+      return;
+    }
+    await refetch();
+  };
+
   const openSighting = (item: PersonItem) => {
     setSightingItem(item);
     setIsSightingModalOpen(true);
@@ -314,20 +327,42 @@ export function App() {
             {FEATURES.aid && <Route path="/ayuda" element={<AidBoardView />} />}
             <Route
               path="/admin"
-              element={renderAdminContent(
-                <AdminOverviewView
-                  adminReports={adminReports}
-                  onSelectAdminReport={(report) => navigate(`/admin/${report.id}`)}
-                  onApproveReport={approveReport}
-                  onRejectReport={rejectReport}
-                />
-              )}
+              element={
+                <AdminGate>
+                  {renderAdminContent(
+                    <AdminOverviewView
+                      adminReports={adminReports}
+                      onSelectAdminReport={(report) => navigate(`/admin/${report.id}`)}
+                      onApproveReport={approveReport}
+                      onRejectReport={rejectReport}
+                    />
+                  )}
+                </AdminGate>
+              }
+            />
+            <Route
+              path="/admin/casos"
+              element={
+                <AdminGate>
+                  {renderPersonContent(
+                    <AdminCasesView
+                      items={items}
+                      onMarkStatus={handleMarkStatus}
+                      onBack={() => navigate('/admin')}
+                    />
+                  )}
+                </AdminGate>
+              }
             />
             <Route
               path="/admin/:reportId"
-              element={renderAdminContent(
-                <AdminReportRoute reports={adminReports} onUpdateStatus={updateReportStatus} />
-              )}
+              element={
+                <AdminGate>
+                  {renderAdminContent(
+                    <AdminReportRoute reports={adminReports} onUpdateStatus={updateReportStatus} />
+                  )}
+                </AdminGate>
+              }
             />
             <Route path="*" element={<Navigate to="/inicio" replace />} />
           </Routes>
@@ -357,6 +392,13 @@ export function App() {
                 className="text-[#bcc9c6] hover:text-[#436370] hover:underline transition-colors cursor-pointer"
               >
                 Panel de moderación
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                onClick={() => navigate('/admin/casos')}
+                className="text-[#bcc9c6] hover:text-[#436370] hover:underline transition-colors cursor-pointer"
+              >
+                Gestión de casos
               </button>
             </div>
           </div>
