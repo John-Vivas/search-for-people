@@ -71,7 +71,16 @@ begin
   limit 1;
 
   if found then
-    return v_zone;  -- ya existe: no duplicar, devolver la existente
+    -- Si existía sin coordenadas y ahora llegan, completarlas (para que aparezca
+    -- en el mapa al re-registrar). No duplica.
+    if v_zone.latitude is null and v_zone.longitude is null
+       and p_latitude is not null and p_longitude is not null then
+      update public.emergency_zones
+      set latitude = p_latitude, longitude = p_longitude, updated_at = now()
+      where id = v_zone.id
+      returning * into v_zone;
+    end if;
+    return v_zone;
   end if;
 
   insert into public.emergency_zones (
