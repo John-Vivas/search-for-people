@@ -104,10 +104,16 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
     setError(null);
     try {
       if (kind === 'zone') {
+        // Los departamentos del árbol son sintéticos (id "dept-...", no UUID),
+        // así que mandamos el NOMBRE del depto y solo el parentId si es UUID real.
+        const deptNode = departments.find((d) => d.id === parentId);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parentId);
         const res = await zonesService.createCommunityZone({
           name: name.trim(),
           type: zoneType,
-          parentId: zoneType === 'DEPARTMENT' ? null : parentId || null,
+          parentId: zoneType === 'DEPARTMENT' ? null : isUuid ? parentId : null,
+          department: zoneType === 'DEPARTMENT' ? null : deptNode?.name ?? null,
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
         });
@@ -289,7 +295,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
           </div>
 
           {error && (
-            <p className="text-xs text-[#ba1a1a] bg-[#ffdad6] rounded-lg px-3 py-2">{error}</p>
+            <p className="text-xs text-center text-[#ba1a1a] bg-[#ffdad6] rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
