@@ -6,7 +6,7 @@ import React, { useState } from 'react';
  * el front solo controla la UI (queda visible en el bundle), no el acceso a la
  * BD. Cambiá la clave seteando VITE_ADMIN_PIN en Vercel; si no, usa el default.
  */
-const DEFAULT_PIN = 'alertavivo2026';
+const DEFAULT_PIN = 'alertavivoAdminDevs';
 const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN || DEFAULT_PIN).toString();
 const SESSION_KEY = 'estamos_buscando_admin_ok';
 
