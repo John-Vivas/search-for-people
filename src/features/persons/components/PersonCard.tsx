@@ -32,7 +32,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
       case 'desaparecido':
         return (
           <span className="bg-[#ba1a1a] text-white font-semibold text-xs px-2.5 py-1 rounded-full flex items-center gap-1 shadow-xs">
-            <span className="material-symbols-outlined text-[14px]">warning</span> Missing / Desaparecido
+            <span className="material-symbols-outlined text-[14px]">warning</span> Desaparecido
           </span>
         );
       case 'encontrado':
@@ -66,9 +66,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
         onClick={() => onSelect(item)}
         className="bg-white rounded-xl p-4 flex flex-col sm:flex-row gap-4 relative overflow-hidden border border-[#e1e3e4] hover:shadow-md transition-all cursor-pointer group"
       >
-        <div className="absolute top-3 left-3 z-10">{renderBadge()}</div>
-
-        <div className="w-full sm:w-32 h-44 sm:h-36 shrink-0 rounded-lg overflow-hidden bg-[#e7e8e9] relative sm:mt-9">
+        <div className="w-full sm:w-32 h-44 sm:h-36 shrink-0 rounded-lg overflow-hidden bg-[#e7e8e9] relative">
           <OptimizedImage
             src={item.photo}
             alt={item.name}
@@ -79,8 +77,9 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
           />
         </div>
 
-        <div className="flex flex-col justify-between flex-1 py-1 sm:pt-9">
+        <div className="flex flex-col justify-between flex-1 py-1">
           <div>
+            <div className="mb-2">{renderBadge()}</div>
             <div className="flex justify-between items-start gap-2">
               <h3 className="text-lg font-bold text-[#191c1d] group-hover:text-[#00685d] transition-colors">
                 {item.name}
@@ -127,8 +126,6 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
       onClick={() => onSelect(item)}
       className="bg-white rounded-xl border border-[#e1e3e4] overflow-hidden flex flex-col relative group hover:shadow-md transition-all cursor-pointer"
     >
-      <div className="absolute top-3 right-3 z-10 flex gap-2">{renderBadge()}</div>
-
       <div className="h-52 relative overflow-hidden bg-[#e7e8e9]">
         <OptimizedImage
           src={item.photo}
@@ -142,6 +139,7 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
 
       <div className="p-4 flex-grow flex flex-col justify-between">
         <div>
+          <div className="mb-2">{renderBadge()}</div>
           <h3 className="text-lg font-bold text-[#191c1d] group-hover:text-[#00685d] transition-colors mb-0.5">
             {item.name}
           </h3>
