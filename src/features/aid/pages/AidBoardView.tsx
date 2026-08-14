@@ -1,12 +1,18 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAidRequests } from '@/src/features/aid/hooks/useAidRequests';
+import { useUserLocation } from '@/src/features/aid/hooks/useUserLocation';
 import { aidRequestsService } from '@/src/features/aid/services/aidRequests.service';
 import { AidRequestCard } from '@/src/features/aid/components/AidRequestCard';
 import { AidRequestForm } from '@/src/features/aid/components/AidRequestForm';
-import type { AidRequest } from '@/src/features/aid/types/aid';
+import type { AidRequest, AidRequestPhones } from '@/src/features/aid/types/aid';
+import { haversineKm } from '@/src/features/aid/utils/distance';
 import { ListLoadingState, ListErrorState } from '@/src/components/common/AsyncListState';
+import { PhoneSessionProvider, usePhoneSession } from '@/src/features/phone-auth/hooks/usePhoneSession';
+import { PhoneLoginModal } from '@/src/features/phone-auth/components/PhoneLoginModal';
+import { getPreferredName, setPreferredName } from '@/src/lib/preferredName';
 
 type StatusFilter = 'ALL' | 'OPEN' | 'IN_PROGRESS' | 'DELIVERED';
+type SortBy = 'URGENCY' | 'RECENT';
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'Todas' },
@@ -23,90 +29,286 @@ function matchesFilter(req: AidRequest, filter: StatusFilter): boolean {
   return true;
 }
 
-export const AidBoardView: React.FC = () => {
-  const { requests, loading, error, live, refetch } = useAidRequests();
+/** Short "how long ago" for the live-updating "Actualizado hace…" line. */
+function formatAgoShort(sinceMs: number): string {
+  const seconds = Math.max(0, Math.round(sinceMs / 1000));
+  if (seconds < 60) return `${seconds} s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  return `${hours} h`;
+}
+
+type PendingAction = { type: 'create' } | { type: 'commit'; request: AidRequest } | null;
+
+const AidBoardViewInner: React.FC = () => {
+  const { phone, isLoggedIn, loading: sessionLoading, logout } = usePhoneSession();
+  const { requests, loading, error, live, lastUpdatedAt, refetch } = useAidRequests();
+  const userLocation = useUserLocation();
   const [filter, setFilter] = useState<StatusFilter>('ALL');
+  const [sortBy, setSortBy] = useState<SortBy>('URGENCY');
   const [formOpen, setFormOpen] = useState(false);
   const [committing, setCommitting] = useState<AidRequest | null>(null);
-  const [providerOrg, setProviderOrg] = useState('');
+  const [delivering, setDelivering] = useState<AidRequest | null>(null);
+  const [providerName, setProviderName] = useState('');
   const [eta, setEta] = useState('60');
+  const [deliveryCodeInput, setDeliveryCodeInput] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const visible = useMemo(
-    () => requests.filter((r) => matchesFilter(r, filter)),
-    [requests, filter]
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+
+  const [phones, setPhones] = useState<Record<string, AidRequestPhones>>({});
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const refetchPhones = useCallback(async () => {
+    if (!isLoggedIn) {
+      setPhones({});
+      return;
+    }
+    const res = await aidRequestsService.listPhones();
+    if (res.data) {
+      setPhones(Object.fromEntries(res.data.map((p) => [p.id, p])));
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    refetchPhones();
+  }, [refetchPhones]);
+
+  const counts = useMemo(
+    () => ({
+      ALL: requests.length,
+      OPEN: requests.filter((r) => r.status === 'OPEN').length,
+      IN_PROGRESS: requests.filter((r) => r.status === 'COMMITTED' || r.status === 'EN_ROUTE').length,
+      DELIVERED: requests.filter((r) => r.status === 'DELIVERED').length,
+    }),
+    [requests]
   );
 
-  const openCount = requests.filter((r) => r.status === 'OPEN').length;
+  const visible = useMemo(() => {
+    const filtered = requests.filter((r) => matchesFilter(r, filter));
+    if (sortBy === 'URGENCY') {
+      return [...filtered].sort((a, b) => b.urgency - a.urgency || b.created_at.localeCompare(a.created_at));
+    }
+    return filtered; // requests already arrive sorted by created_at desc
+  }, [requests, filter, sortBy]);
+
+  const requireLogin = (action: PendingAction) => {
+    setPendingAction(action);
+    setLoginOpen(true);
+  };
+
+  const handleLoginSuccess = useCallback(() => {
+    refetchPhones();
+    if (pendingAction?.type === 'create') setFormOpen(true);
+    else if (pendingAction?.type === 'commit') {
+      setProviderName(getPreferredName());
+      setCommitting(pendingAction.request);
+    }
+    setPendingAction(null);
+  }, [pendingAction, refetchPhones]);
+
+  const handleNew = () => {
+    if (!isLoggedIn) {
+      requireLogin({ type: 'create' });
+      return;
+    }
+    setFormOpen(true);
+  };
+
+  const handleCommit = useCallback(
+    (req: AidRequest) => {
+      if (!isLoggedIn) {
+        requireLogin({ type: 'commit', request: req });
+        return;
+      }
+      setProviderName(getPreferredName());
+      setCommitting(req);
+    },
+    [isLoggedIn]
+  );
 
   const doCommit = async () => {
     if (!committing) return;
     setBusyId(committing.id);
-    await aidRequestsService.commit(committing.id, providerOrg.trim() || 'Anónimo', eta ? Number(eta) : null);
+    setActionError(null);
+    const res = await aidRequestsService.commit(committing.id, {
+      providerName: providerName.trim() || 'Anónimo',
+      etaMinutes: eta ? Number(eta) : undefined,
+    });
     setBusyId(null);
+    if (res.error) {
+      setActionError(res.error.message || 'No se pudo comprometer la solicitud');
+      return;
+    }
+    setPreferredName(providerName);
     setCommitting(null);
-    setProviderOrg('');
+    setProviderName('');
     setEta('60');
+    refetch();
+    refetchPhones();
+  };
+
+  const doDeliver = async () => {
+    if (!delivering) return;
+    setBusyId(delivering.id);
+    setActionError(null);
+    const res = await aidRequestsService.deliver(delivering.id, deliveryCodeInput.trim());
+    setBusyId(null);
+    if (res.error) {
+      setActionError(res.error.message || 'Código incorrecto');
+      return;
+    }
+    setDelivering(null);
+    setDeliveryCodeInput('');
     refetch();
   };
 
-  const advance = useCallback(
-    async (req: AidRequest, status: 'EN_ROUTE' | 'DELIVERED') => {
+  const handleMarkEnRoute = useCallback(
+    async (req: AidRequest) => {
       setBusyId(req.id);
-      await aidRequestsService.advance(req.id, status);
+      await aidRequestsService.markEnRoute(req.id);
       setBusyId(null);
       refetch();
     },
     [refetch]
   );
 
-  // Stable handlers so memoized AidRequestCard doesn't re-render every tick.
-  const handleCommit = useCallback((r: AidRequest) => setCommitting(r), []);
-  const handleEnRoute = useCallback((r: AidRequest) => advance(r, 'EN_ROUTE'), [advance]);
-  const handleDelivered = useCallback((r: AidRequest) => advance(r, 'DELIVERED'), [advance]);
+  const handleCancel = useCallback(
+    async (req: AidRequest) => {
+      setBusyId(req.id);
+      await aidRequestsService.cancel(req.id);
+      setBusyId(null);
+      refetch();
+    },
+    [refetch]
+  );
+
+  const handleWithdraw = useCallback(
+    async (req: AidRequest) => {
+      setBusyId(req.id);
+      await aidRequestsService.withdraw(req.id);
+      setBusyId(null);
+      refetch();
+      refetchPhones();
+    },
+    [refetch, refetchPhones]
+  );
+
+  const handleDeliverIntent = useCallback((req: AidRequest) => {
+    setActionError(null);
+    setDeliveryCodeInput('');
+    setDelivering(req);
+  }, []);
+
+  const handleCreated = useCallback(() => {
+    refetch();
+    refetchPhones();
+  }, [refetch, refetchPhones]);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
-      <div className="flex items-start justify-between gap-3 mb-1">
+    <div className="max-w-3xl mx-auto px-4 py-6 pb-28 md:pb-12 animate-fade-in">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#191c1d]">Coordinación de Ayuda</h1>
-          <p className="text-sm text-[#6d7a77]">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-[#191c1d]">Coordinación de Ayuda</h1>
+            <span
+              className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                live ? 'bg-[#d6f0e5] text-[#00685d]' : 'bg-[#e7e8e9] text-[#6d7a77]'
+              }`}
+              title={live ? 'Actualizaciones en vivo activas' : 'Sin conexión en vivo'}
+            >
+              <span className={`w-2 h-2 rounded-full ${live ? 'bg-[#00685d] animate-pulse' : 'bg-[#9ba5a2]'}`} />
+              {live ? 'En vivo' : 'Sin conexión'}
+            </span>
+          </div>
+          <p className="text-sm text-[#6d7a77] mt-1">
             Solicitudes de recursos en tiempo real para las zonas de emergencia.
           </p>
         </div>
-        <span
-          className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-            live ? 'bg-[#d6f0e5] text-[#00685d]' : 'bg-[#e7e8e9] text-[#6d7a77]'
-          }`}
-          title={live ? 'Actualizaciones en vivo activas' : 'Sin conexión en vivo'}
-        >
-          <span className={`w-2 h-2 rounded-full ${live ? 'bg-[#00685d] animate-pulse' : 'bg-[#9ba5a2]'}`} />
-          {live ? 'En vivo' : 'Sin conexión'}
-        </span>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {!sessionLoading &&
+            (isLoggedIn ? (
+              <div className="h-10 px-3.5 rounded-full border border-[#e1e3e4] bg-white flex items-center gap-2 text-xs font-bold text-[#3d4947]">
+                <span className="material-symbols-outlined text-[16px] text-[#00685d]">verified_user</span>
+                {phone}
+                <button
+                  onClick={() => logout().then(refetchPhones)}
+                  className="text-[#00685d] hover:underline cursor-pointer"
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => requireLogin(null)}
+                className="h-10 px-4 rounded-full border border-[#bcc9c6] bg-white text-sm font-bold text-[#191c1d] hover:bg-[#f3f4f5] transition-colors cursor-pointer"
+              >
+                Iniciar sesión
+              </button>
+            ))}
+          <button
+            onClick={handleNew}
+            className="shrink-0 flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#00685d] text-white text-sm font-bold hover:bg-[#008376] transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Nueva solicitud
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-4 mb-4">
-        <div className="flex gap-2 overflow-x-auto">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                filter === f.key ? 'bg-[#00685d] text-white' : 'bg-white border border-[#e1e3e4] text-[#3d4947]'
-              }`}
-            >
-              {f.label}
-              {f.key === 'OPEN' && openCount > 0 ? ` (${openCount})` : ''}
-            </button>
-          ))}
+      <div className="flex items-center justify-between gap-2 mt-5">
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                  active ? 'bg-[#1c1c1c] text-white' : 'text-[#3d4947] hover:bg-[#e7e8e9]'
+                }`}
+              >
+                {f.label}
+                <span
+                  className={`text-[11px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center ${
+                    active ? 'bg-white/20 text-white' : 'bg-[#e1e3e4] text-[#6d7a77]'
+                  }`}
+                >
+                  {counts[f.key]}
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <button
-          onClick={() => setFormOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#00685d] text-white text-sm font-bold hover:bg-[#008376] transition-colors cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          <span className="hidden sm:inline">Nueva</span>
-        </button>
+
+        <label className="flex items-center gap-1.5 text-xs text-[#6d7a77] font-medium shrink-0">
+          <span className="hidden sm:inline">Ordenar:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+            className="text-xs font-bold text-[#191c1d] bg-transparent border-none outline-none cursor-pointer"
+          >
+            <option value="URGENCY">Urgencia</option>
+            <option value="RECENT">Recientes</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 mt-3 mb-3 text-xs text-[#9ba5a2]">
+        <span>
+          {visible.length} solicitud{visible.length === 1 ? '' : 'es'} · ordenadas por{' '}
+          {sortBy === 'URGENCY' ? 'urgencia' : 'recientes'}
+        </span>
+        {lastUpdatedAt != null && <span>Actualizado hace {formatAgoShort(now - lastUpdatedAt)}</span>}
       </div>
 
       {loading ? (
@@ -120,20 +322,40 @@ export const AidBoardView: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {visible.map((req) => (
-            <AidRequestCard
-              key={req.id}
-              request={req}
-              busy={busyId === req.id}
-              onCommit={handleCommit}
-              onMarkEnRoute={handleEnRoute}
-              onMarkDelivered={handleDelivered}
-            />
-          ))}
+          {visible.map((req) => {
+            const distanceKm =
+              userLocation && req.latitude != null && req.longitude != null
+                ? haversineKm(userLocation.lat, userLocation.lng, req.latitude, req.longitude)
+                : null;
+            return (
+              <AidRequestCard
+                key={req.id}
+                request={req}
+                phones={phones[req.id]}
+                sessionPhone={phone}
+                distanceKm={distanceKm}
+                busy={busyId === req.id}
+                onCommit={handleCommit}
+                onMarkEnRoute={handleMarkEnRoute}
+                onDeliver={handleDeliverIntent}
+                onCancel={handleCancel}
+                onWithdraw={handleWithdraw}
+              />
+            );
+          })}
         </div>
       )}
 
-      <AidRequestForm open={formOpen} onClose={() => setFormOpen(false)} onCreated={refetch} />
+      <AidRequestForm open={formOpen} onClose={() => setFormOpen(false)} onCreated={handleCreated} />
+
+      <PhoneLoginModal
+        open={loginOpen}
+        onClose={() => {
+          setLoginOpen(false);
+          setPendingAction(null);
+        }}
+        onSuccess={handleLoginSuccess}
+      />
 
       {/* Commit modal */}
       {committing && (
@@ -146,13 +368,13 @@ export const AidBoardView: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-[#191c1d] mb-1">Ayudar con esta solicitud</h3>
             <p className="text-sm text-[#6d7a77] mb-4">
-              Confirmas que tu organización llevará este recurso.
+              Confirmas que llevarás este recurso. El solicitante verá tu nombre y tu número.
             </p>
-            <label className="block text-xs font-bold text-[#191c1d] mb-1">Tu organización</label>
+            <label className="block text-xs font-bold text-[#191c1d] mb-1">Tu nombre</label>
             <input
-              value={providerOrg}
-              onChange={(e) => setProviderOrg(e.target.value)}
-              placeholder="Ej. Banco de Alimentos"
+              value={providerName}
+              onChange={(e) => setProviderName(e.target.value)}
+              placeholder="Ej. Luis Gómez"
               className="w-full h-11 px-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm mb-3 focus:border-[#00685d] outline-none"
             />
             <label className="block text-xs font-bold text-[#191c1d] mb-1">Tiempo estimado de entrega (min)</label>
@@ -163,6 +385,7 @@ export const AidBoardView: React.FC = () => {
               onChange={(e) => setEta(e.target.value)}
               className="w-full h-11 px-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm mb-4 focus:border-[#00685d] outline-none"
             />
+            {actionError && <p className="text-sm text-[#ba1a1a] font-medium mb-3">{actionError}</p>}
             <div className="flex gap-2">
               <button
                 onClick={() => setCommitting(null)}
@@ -173,9 +396,50 @@ export const AidBoardView: React.FC = () => {
               <button
                 onClick={doCommit}
                 disabled={busyId === committing.id}
-                className="flex-1 h-11 rounded-full bg-[#1c1c1c] text-white font-bold text-sm hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex-1 h-11 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Confirmar ayuda
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deliver modal */}
+      {delivering && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setDelivering(null)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-[#191c1d] mb-1">Confirmar entrega</h3>
+            <p className="text-sm text-[#6d7a77] mb-4">
+              Pídele al solicitante el código que recibió al publicar la solicitud.
+            </p>
+            <label className="block text-xs font-bold text-[#191c1d] mb-1">Código de entrega</label>
+            <input
+              value={deliveryCodeInput}
+              onChange={(e) => setDeliveryCodeInput(e.target.value)}
+              inputMode="numeric"
+              placeholder="123456"
+              className="w-full h-11 px-3 rounded-xl border border-[#bcc9c6] bg-[#f8f9fa] text-sm mb-4 focus:border-[#00685d] outline-none"
+            />
+            {actionError && <p className="text-sm text-[#ba1a1a] font-medium mb-3">{actionError}</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDelivering(null)}
+                className="flex-1 h-11 rounded-full border border-[#bcc9c6] text-[#3d4947] font-bold text-sm hover:bg-[#e7e8e9] transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={doDeliver}
+                disabled={busyId === delivering.id}
+                className="flex-1 h-11 rounded-full bg-[#00685d] text-white font-bold text-sm hover:bg-[#008376] transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Confirmar
               </button>
             </div>
           </div>
@@ -184,3 +448,9 @@ export const AidBoardView: React.FC = () => {
     </div>
   );
 };
+
+export const AidBoardView: React.FC = () => (
+  <PhoneSessionProvider>
+    <AidBoardViewInner />
+  </PhoneSessionProvider>
+);

@@ -1,14 +1,23 @@
 import { getSupabaseClient } from '@/src/lib/supabase';
+import { apiClient } from '@/src/services/api/httpClient';
 import { ok, fail, ServiceResponse } from '@/src/services/api/errors';
 import type {
   AidRequest,
-  AidStatus,
+  AidRequestPhones,
+  CommitAidRequestInput,
   CreateAidRequestInput,
 } from '@/src/features/aid/types/aid';
 
 const AID_COLUMNS =
-  'id, resource_type, resource_label, quantity, unit, urgency, status, description, requester_org, requester_contact, provider_org, eta_minutes, zone_id, latitude, longitude, address, place_name, created_at, committed_at, delivered_at, updated_at';
+  'id, resource_type, resource_label, quantity, unit, urgency, status, description, requester_name, provider_name, eta_minutes, zone_id, latitude, longitude, address, place_name, created_at, committed_at, delivered_at, updated_at';
 
+/**
+ * Reads go straight to Supabase (public, RLS-readable — no login needed,
+ * matches the board being public). Every write goes through the Express
+ * backend instead: it requires a phone-session login and is the only place
+ * that ever touches phone numbers, so they never leak through an anon
+ * Supabase policy. See src/features/phone-auth for the login flow.
+ */
 export const aidRequestsService = {
   async list(): Promise<ServiceResponse<AidRequest[]>> {
     try {
@@ -26,64 +35,42 @@ export const aidRequestsService = {
     }
   },
 
-  async create(input: CreateAidRequestInput): Promise<ServiceResponse<AidRequest>> {
-    try {
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.rpc('create_aid_request', {
-        p_resource_type: input.resourceType,
-        p_quantity: input.quantity ?? null,
-        p_unit: input.unit ?? null,
-        p_urgency: input.urgency ?? 3,
-        p_resource_label: input.resourceLabel ?? null,
-        p_description: input.description ?? null,
-        p_requester_org: input.requesterOrg ?? null,
-        p_requester_contact: input.requesterContact ?? null,
-        p_zone_id: input.zoneId ?? null,
-        p_latitude: input.latitude ?? null,
-        p_longitude: input.longitude ?? null,
-        p_address: input.address ?? null,
-        p_place_name: input.placeName ?? null,
-      });
-
-      if (error) return fail(error, 'No se pudo crear la solicitud');
-      return ok(data as AidRequest);
-    } catch (error) {
-      return fail(error, 'No se pudo crear la solicitud');
-    }
+  /** Requires login. Silently returns an empty list (via the 401) when logged out. */
+  listPhones(): Promise<ServiceResponse<AidRequestPhones[]>> {
+    return apiClient.get('/aid-requests/phones');
   },
 
-  async commit(
-    id: string,
-    providerOrg: string,
-    etaMinutes: number | null
-  ): Promise<ServiceResponse<AidRequest>> {
-    try {
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.rpc('commit_aid_request', {
-        p_id: id,
-        p_provider_org: providerOrg,
-        p_eta_minutes: etaMinutes,
-      });
-
-      if (error) return fail(error, 'No se pudo comprometer la solicitud');
-      return ok(data as AidRequest);
-    } catch (error) {
-      return fail(error, 'No se pudo comprometer la solicitud');
-    }
+  /**
+   * Requires login. The response includes `deliveryCode` exactly once — the
+   * backend never stores it in plaintext, so the UI must show it to the
+   * requester now; they'll need to give it to whoever delivers the aid.
+   */
+  create(input: CreateAidRequestInput): Promise<ServiceResponse<AidRequest & { deliveryCode: string }>> {
+    return apiClient.post('/aid-requests', input);
   },
 
-  async advance(id: string, status: AidStatus): Promise<ServiceResponse<AidRequest>> {
-    try {
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase.rpc('advance_aid_request', {
-        p_id: id,
-        p_status: status,
-      });
+  /** Requires login. */
+  commit(id: string, input: CommitAidRequestInput): Promise<ServiceResponse<AidRequest>> {
+    return apiClient.post(`/aid-requests/${id}/commit`, input);
+  },
 
-      if (error) return fail(error, 'No se pudo actualizar el estado');
-      return ok(data as AidRequest);
-    } catch (error) {
-      return fail(error, 'No se pudo actualizar el estado');
-    }
+  /** Requires login as the provider who committed. */
+  markEnRoute(id: string): Promise<ServiceResponse<AidRequest>> {
+    return apiClient.post(`/aid-requests/${id}/en-route`);
+  },
+
+  /** Requires login as the provider who committed, plus the code the requester gave them. */
+  deliver(id: string, deliveryCode: string): Promise<ServiceResponse<AidRequest>> {
+    return apiClient.post(`/aid-requests/${id}/deliver`, { deliveryCode });
+  },
+
+  /** Requires login as the requester. */
+  cancel(id: string): Promise<ServiceResponse<AidRequest>> {
+    return apiClient.post(`/aid-requests/${id}/cancel`);
+  },
+
+  /** Requires login as the provider who committed; reopens the request for someone else. */
+  withdraw(id: string): Promise<ServiceResponse<AidRequest>> {
+    return apiClient.post(`/aid-requests/${id}/withdraw`);
   },
 };

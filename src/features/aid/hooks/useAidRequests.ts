@@ -8,6 +8,8 @@ interface UseAidRequestsResult {
   loading: boolean;
   error: string | null;
   live: boolean;
+  /** Timestamp of the last time the list actually changed (fetch, refetch, or realtime event). */
+  lastUpdatedAt: number | null;
   refetch: () => Promise<void>;
 }
 
@@ -24,12 +26,14 @@ export function useAidRequests(): UseAidRequestsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [live, setLive] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const requestsRef = useRef<AidRequest[]>([]);
 
   const setBoth = useCallback((rows: AidRequest[]) => {
     const sorted = sortByCreatedDesc(rows);
     requestsRef.current = sorted;
     setRequests(sorted);
+    setLastUpdatedAt(Date.now());
   }, []);
 
   const refetch = useCallback(async () => {
@@ -79,5 +83,5 @@ export function useAidRequests(): UseAidRequestsResult {
     };
   }, [setBoth]);
 
-  return { requests, loading, error, live, refetch };
+  return { requests, loading, error, live, lastUpdatedAt, refetch };
 }

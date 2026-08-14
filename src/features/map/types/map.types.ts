@@ -120,6 +120,8 @@ export interface MapProviderConfig {
   attribution?: string;
   /** When false, disables all user interaction and hides the zoom control (static preview) */
   interactive?: boolean;
+  /** Fires with the clicked point's coordinates — used by location pickers (e.g. the Ayuda form). */
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 export interface MapProviderInstance {

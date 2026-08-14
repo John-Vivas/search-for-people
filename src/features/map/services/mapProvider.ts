@@ -31,6 +31,10 @@ export function createLeafletProvider(
     L.control.zoom({ position: 'topright' }).addTo(map);
   }
 
+  if (config.onMapClick) {
+    map.on('click', (e: L.LeafletMouseEvent) => config.onMapClick?.(e.latlng.lat, e.latlng.lng));
+  }
+
   const layers = new Map<string, L.Layer>();
 
   return {
