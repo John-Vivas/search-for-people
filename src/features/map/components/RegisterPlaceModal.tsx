@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type { EmergencyZone } from '@/src/features/map/types/map.types';
-import { getDepartmentZones, getCityLevelZones } from '@/src/features/map/utils/zoneTree';
+import { getCityLevelZones } from '@/src/features/map/utils/zoneTree';
+import { COLOMBIA_DEPARTMENTS } from '@/src/features/map/data/colombiaDepartments';
 import { zonesService } from '@/src/features/map/services/zones.service';
 import { facilitiesService } from '@/src/features/map/services/facilities.service';
 import { invalidateEnrichmentContext } from '@/src/lib/enrichmentContext';
@@ -44,7 +45,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
   const [kind, setKind] = useState<Kind>('zone');
   const [name, setName] = useState('');
   const [zoneType, setZoneType] = useState<'DEPARTMENT' | 'CITY' | 'MUNICIPALITY'>('CITY');
-  const [parentId, setParentId] = useState('');
+  const [departmentName, setDepartmentName] = useState('');
   const [facilityType, setFacilityType] = useState('HOSPITAL');
   const [zoneId, setZoneId] = useState('');
   const [address, setAddress] = useState('');
@@ -53,7 +54,6 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const departments = useMemo(() => getDepartmentZones(zones), [zones]);
   const cities = useMemo(() => getCityLevelZones(zones), [zones]);
 
   // Dedup en vivo: zonas existentes con nombre parecido
@@ -71,7 +71,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
     setName('');
     setAddress('');
     setCoords(null);
-    setParentId('');
+    setDepartmentName('');
     setZoneId('');
     setError(null);
   };
@@ -104,7 +104,7 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
     setSubmitting(true);
     setError(null);
     try {
-      const deptNode = departments.find((d) => d.id === parentId);
+      const deptRef = COLOMBIA_DEPARTMENTS.find((d) => d.name === departmentName);
       const cityNode = cities.find((c) => c.id === zoneId);
 
       // Coordenadas: las capturadas por GPS, o geocodificadas por nombre para
@@ -114,36 +114,26 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
       if (lat == null || lng == null) {
         const geo = await geocodeAddress(
           kind === 'zone'
-            ? { city: name.trim(), neighborhood: deptNode?.name ?? null }
+            ? { city: name.trim(), neighborhood: departmentName || null }
             : { address: address.trim() || null, city: cityNode?.name ?? null }
         );
         if (geo) {
           lat = geo.latitude;
           lng = geo.longitude;
-        } else {
-          // Fallback: centroide del departamento (zona) o de la ciudad (centro),
-          // para que SIEMPRE quede ubicado en el mapa aunque sea aproximado.
-          const fallbackName = kind === 'zone' ? deptNode?.name : cityNode?.name;
-          if (fallbackName) {
-            const geoFb = await geocodeAddress({ city: fallbackName });
-            if (geoFb) {
-              lat = geoFb.latitude;
-              lng = geoFb.longitude;
-            }
-          }
+        } else if (kind === 'zone' && deptRef) {
+          // Fallback: centroide del departamento elegido, así SIEMPRE queda ubicado.
+          lat = deptRef.latitude;
+          lng = deptRef.longitude;
         }
       }
 
       if (kind === 'zone') {
-        // Los departamentos del árbol son sintéticos (id "dept-...", no UUID),
-        // así que mandamos el NOMBRE del depto y solo el parentId si es UUID real.
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parentId);
+        // Mandamos el NOMBRE del departamento; el RPC lo busca/crea y enlaza.
         const res = await zonesService.createCommunityZone({
           name: name.trim(),
           type: zoneType,
-          parentId: zoneType === 'DEPARTMENT' ? null : isUuid ? parentId : null,
-          department: zoneType === 'DEPARTMENT' ? null : deptNode?.name ?? null,
+          parentId: null,
+          department: zoneType === 'DEPARTMENT' ? null : departmentName || null,
           latitude: lat,
           longitude: lng,
         });
@@ -251,13 +241,13 @@ export const RegisterPlaceModal: React.FC<RegisterPlaceModalProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-[#3d4947] mb-1">Departamento</label>
                   <select
-                    value={parentId}
-                    onChange={(e) => setParentId(e.target.value)}
+                    value={departmentName}
+                    onChange={(e) => setDepartmentName(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl border-2 border-[#e1e3e4] focus:border-[#00685d] focus:outline-none text-sm bg-white cursor-pointer"
                   >
                     <option value="">Sin especificar</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                    {COLOMBIA_DEPARTMENTS.map((d) => (
+                      <option key={d.name} value={d.name}>{d.name}</option>
                     ))}
                   </select>
                 </div>

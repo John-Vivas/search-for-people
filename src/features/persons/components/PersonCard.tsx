@@ -127,13 +127,21 @@ const PersonCardBase: React.FC<PersonCardProps> = ({ item, onSelect, layout = 'g
       className="bg-white rounded-xl border border-[#e1e3e4] overflow-hidden flex flex-col relative group hover:shadow-md transition-all cursor-pointer"
     >
       <div className="h-52 relative overflow-hidden bg-[#e7e8e9]">
+        {/* Fondo difuminado de la misma foto: la imagen se ve COMPLETA
+            (object-contain) sin recortes feos, especialmente en grupales. */}
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-110 blur-2xl opacity-40"
+          style={{ backgroundImage: `url("${item.photo}")` }}
+          aria-hidden="true"
+        />
         <OptimizedImage
           src={item.photo}
           alt={item.name}
           width={400}
           height={300}
+          crop="fit"
           fallbackType={fallbackType}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="relative w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
         />
       </div>
 
